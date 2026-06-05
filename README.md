@@ -1,2 +1,6 @@
-# docassemble-VTCertificateOfServiceGeneral
-A docassemble extension. Our official respository for our general certificate of service form 600-00264.
+# docassemble.VTCertificateOfServiceGeneral
+General Certificate of Service form 600-00264.
+
+## Authors
+- K. Surette, Legal Services Vermont
+- K. McGuire, Lemma Legal
