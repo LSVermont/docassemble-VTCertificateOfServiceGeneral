@@ -1,0 +1,477 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.VTSharedYMLFile:VTSharedYMLFile.yml
+---
+metadata:
+  title: Certificate of Service
+  short title: Certificate of Service
+  description: >-
+    Complete Vermont Judiciary Form 600-00264, Certificate of Service.
+  original_form:
+    - general_certificate_of_service_600_00264.pdf
+---
+objects:
+  - all_courts: ALCourtLoader.using(file_name='docassemble.VTSharedYMLFile:data/sources/courts_list_full.xlsx')
+  - users: ALPeopleList.using(ask_number=False, minimum_number=1, complete_attribute='complete')
+  - other_parties: ALPeopleList.using(ask_number=False, minimum_number=1, complete_attribute='complete')
+  - service_recipients: DAList.using(object_type=DAObject, minimum_number=1, complete_attribute='complete')
+  - other_documents_served: DAList.using(object_type=DAObject, ask_number=False, minimum_number=1, complete_attribute='complete')
+  - certificate_of_service_attachment: DAList.using(auto_gather=False, gathered=True)
+---
+sections:
+  - intro: Introduction
+  - parties: Parties
+  - case: Court case
+  - documents: Documents served
+  - service: Service details
+  - review_certificate: <i class="fa-solid fa-pencil"></i> <u>Edit your answers</u>
+  - sign: Signature
+  - get_docs: Get your document
+progressive: False
+---
+code: |
+  users1_role = "role_" + user_role
+  user_ask_role = user_role
+  if user_role == "plaintiff":
+    other_parties_role = "defendant"
+    other_parties_role_plural = "defendants"
+  else:
+    other_parties_role = "plaintiff"
+    other_parties_role_plural = "plaintiffs"
+---
+depends on:
+  - user_role
+  - users.gathered
+  - other_parties.gathered
+code: |
+  users_names = [str(person) for person in users]
+  other_parties_names = [str(person) for person in other_parties]
+  users_caption = users_names[0] if len(users_names) == 1 else ", ".join(users_names[:-1]) + " and " + users_names[-1]
+  other_parties_caption = other_parties_names[0] if len(other_parties_names) == 1 else ", ".join(other_parties_names[:-1]) + " and " + other_parties_names[-1]
+  if user_role == "plaintiff":
+    certificate_caption_plaintiff = users_caption
+    certificate_caption_defendant = other_parties_caption
+  else:
+    certificate_caption_plaintiff = other_parties_caption
+    certificate_caption_defendant = users_caption
+---
+mandatory: True
+code: |
+  nav.set_section("intro")
+  intro_screen
+
+  nav.set_section("parties")
+  users[0].complete
+  user_role
+  users.gather()
+  other_parties.gather()
+
+  nav.set_section("case")
+  user_selected_county
+  trial_court_index
+  trial_court.address.county
+  docket_number
+
+  nav.set_section("documents")
+  documents_served
+  if documents_served['Other']:
+    other_documents_served.gather()
+  document_served_list
+
+  nav.set_section("service")
+  service_recipients.gather()
+
+  nav.set_section("review_certificate")
+  certificate_preview_question
+  ### add review screen ###
+
+  nav.set_section("sign")
+  attestation
+  al_form_requires_digital_signature = True
+  basic_questions_signature_flow
+
+  nav.set_section("get_docs")
+  certificate_of_service_download
+---
+event: intro_screen
+question: |
+  Certificate of Service
+subquestion: |
+  ${ intro_vtcourtforms_3_steps }
+
+  ${ intro_vtcourtforms_created_by }
+
+  ${ intro_how_to_edit_answers }
+continue button field: intro_screen
+---
+id: your name
+sets:
+  - users[0].name.first
+  - users[0].name.last
+question: |
+  What is your name?
+fields:
+  - First name: users[0].name.first
+  - Middle name: users[0].name.middle
+    required: False
+  - Last name: users[0].name.last
+  - Suffix: users[0].name.suffix
+    required: False
+---
+id: your role
+question: |
+  What is your role in the case?
+fields:
+  - I am the: user_role
+    input type: radio
+    choices:
+      - Plaintiff: plaintiff
+      - Defendant: defendant
+---
+id: any other users
+question: |
+  Are there any other ${ user_role }s named with you in the case?
+yesno: users.there_is_another
+---
+id: additional user name
+sets:
+  - users[i].name.first
+question: |
+  What is the name of the ${ ordinal(i) } ${ user_role }?
+fields:
+  - First name or business name: users[i].name.first
+  - Middle name: users[i].name.middle
+    required: False
+  - Last name: users[i].name.last
+    required: False
+  - Suffix: users[i].name.suffix
+    required: False
+---
+code: |
+  users[i].name.first
+  users[i].complete = True
+---
+id: other party name
+sets:
+  - other_parties[0].name.first
+question: |
+  What is the first ${ other_parties_role }'s name?
+subquestion: |
+  Enter the name as it appears in the case caption.
+fields:
+  - First name or business name: other_parties[0].name.first
+  - Middle name: other_parties[0].name.middle
+    required: False
+  - Last name: other_parties[0].name.last
+    required: False
+  - Suffix: other_parties[0].name.suffix
+    required: False
+---
+id: any other other parties
+question: |
+  Are there any other ${ other_parties_role_plural } named in the case?
+yesno: other_parties.there_is_another
+---
+id: additional other party name
+sets:
+  - other_parties[i].name.first
+question: |
+  What is the name of the ${ ordinal(i) } ${ other_parties_role }?
+fields:
+  - First name or business name: other_parties[i].name.first
+  - Middle name: other_parties[i].name.middle
+    required: False
+  - Last name: other_parties[i].name.last
+    required: False
+  - Suffix: other_parties[i].name.suffix
+    required: False
+---
+code: |
+  other_parties[i].name.first
+  other_parties[i].complete = True
+---
+id: court county
+question: |
+  What county is your court case in?
+subquestion: |
+  Choose the county where your court case is filed.
+fields:
+  - County: user_selected_county
+    code: |
+      sorted(all_courts.unique_column_values('branch') - {"Environmental", "Judicial Bureau"})
+---
+id: court information
+question: |
+  Which court is your case in?
+subquestion: |
+  The court unit is usually listed at the top-left of your court papers.
+fields:
+  - Court: trial_court_index
+    code: |
+      [
+        (index, "{} {}".format(row["address_county"], row["division"]))
+        for index, row in all_courts._load_courts().iterrows()
+        if row["branch"] == user_selected_county
+      ]
+---
+id: case number
+question: |
+  What is the case number?
+subquestion: |
+  The case number is usually listed near the top of your court papers. You can leave this blank if you do not know it.
+fields:
+  - Case number: docket_number
+    required: False
+---
+id: documents served
+question: |
+  What documents did you serve?
+subquestion: |
+  Select every document that you delivered to the other party or parties.
+fields:
+  - no label: documents_served
+    datatype: checkboxes
+    none of the above: False
+    choices:
+      - Notice of Appearance
+      - Summons
+      - Complaint
+      - Exhibits
+      - Affidavit
+      - Application to Waive Filing Fees and Service Costs
+      - Notice of Court Decision of Application to Waive Fees and Costs
+      - Notice of Hearing
+      - Motion for Default Judgment
+      - Motion to Dismiss
+      - Answer
+      - Counterclaim
+      - Disclosure of Exempt Income
+      - Motion for Financial Disclosure
+      - Financial Disclosure Affidavit
+      - Financial Disclosure Order
+      - Financial Affidavit Form 813A
+      - Financial Affidavit Form 813B
+      - Default Judgment
+      - Notice of Appeal
+      - Notice of Action and Request for Waiver of Service of Summons
+      - Information and Instructions for the Defendant
+      - Blank Notice of Appearance form for other party
+      - Blank Answer form for other party
+      - Blank Certificate of Service form for other party
+      - Other
+validation code: |
+  if len(documents_served.true_values()) == 0:
+    validation_error("Select at least one document.")
+---
+id: other documents served
+question: |
+  What other document did you serve?
+fields:
+  - Other document: other_documents_served[i].name
+    maxlength: 120
+---
+code: |
+  other_documents_served[i].name
+  other_documents_served[i].complete = True
+---
+id: any other other documents served
+question: |
+  Did you serve another document that was not listed?
+yesno: other_documents_served.there_is_another
+---
+depends on:
+  - documents_served
+  - other_documents_served.gathered
+code: |
+  document_served_list = documents_served.true_values()
+  if documents_served['Other']:
+    document_served_list.remove('Other')
+    document_served_list.extend([document.name for document in other_documents_served])
+---
+id: service recipient details
+question: |
+  Who did you serve?
+fields:
+  - Name of person or party served: service_recipients[i].selected_name
+    input type: radio
+    code: |
+      [str(party) for party in other_parties] + ["Someone else"]
+  - Name: service_recipients[i].new_name
+    show if:
+      variable: service_recipients[i].selected_name
+      is: Someone else
+---
+depends on:
+  - service_recipients[i].selected_name
+  - service_recipients[i].new_name
+code: |
+  if service_recipients[i].selected_name == "Someone else":
+    service_recipients[i].name = service_recipients[i].new_name
+  else:
+    service_recipients[i].name = service_recipients[i].selected_name
+---
+id: service recipient method
+question: |
+  How did you serve ${ service_recipients[i].name }?
+fields:
+  - By first class mail: service_recipients[i].first_class_mail
+    datatype: yesno
+  - By hand delivery: service_recipients[i].personal_delivery
+    datatype: yesno
+  - By email: service_recipients[i].by_email
+    datatype: yesno
+    help: The party must have consented to receive documents by email.
+  - By certified mail: service_recipients[i].certified_mail
+    datatype: yesno
+    help: Attach the return receipt to this certificate.
+  - Other way: service_recipients[i].other_delivery
+    datatype: yesno
+  - Explain the other way you served them: service_recipients[i].describe_other_delivery
+    show if: service_recipients[i].other_delivery
+    required: False
+  - Mailing or physical address used: service_recipients[i].service_address
+    datatype: text
+    js show if: |
+      val("service_recipients[i].first_class_mail") ||
+      val("service_recipients[i].personal_delivery") ||
+      val("service_recipients[i].certified_mail")
+  - Email address used: service_recipients[i].service_email
+    datatype: email
+    required: False
+    show if: service_recipients[i].by_email
+validation code: |
+  if not (service_recipients[i].first_class_mail or service_recipients[i].personal_delivery or service_recipients[i].by_email or service_recipients[i].certified_mail or service_recipients[i].other_delivery):
+    validation_error("Select at least one way you served this person or party.")
+  if service_recipients[i].by_email and not service_recipients[i].service_email:
+    validation_error("Enter the email address you used.", field="service_recipients[i].service_email")
+  if (service_recipients[i].first_class_mail or service_recipients[i].personal_delivery or service_recipients[i].certified_mail or service_recipients[i].other_delivery) and not service_recipients[i].service_address:
+    validation_error("Enter the mailing or physical address you used.", field="service_recipients[i].service_address")
+---
+code: |
+  if service_recipients[i].selected_name == "Someone else":
+    service_recipients[i].name = service_recipients[i].new_name
+  else:
+    service_recipients[i].name = service_recipients[i].selected_name
+  service_recipients[i].name
+  service_recipients[i].first_class_mail
+  service_recipients[i].personal_delivery
+  service_recipients[i].by_email
+  service_recipients[i].certified_mail
+  service_recipients[i].other_delivery
+  if service_recipients[i].by_email:
+    service_recipients[i].service_email
+  if service_recipients[i].first_class_mail or service_recipients[i].personal_delivery or service_recipients[i].certified_mail or service_recipients[i].other_delivery:
+    service_recipients[i].service_address
+  service_recipients[i].complete = True
+---
+id: any other service recipients
+question: |
+  Did you serve anyone else?
+yesno: service_recipients.there_is_another
+---
+id: certificate preview
+question: |
+  Review your answers before you sign
+subquestion: |
+  Select "Edit your answers" to review or change your answers.
+
+  ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
+
+  When you are done reviewing, come back to this screen and select "Next."
+continue button field: certificate_preview_question
+---
+code: |
+  signature_fields = ['users[0].signature']
+---
+depends on:
+  - document_served_list
+  - service_recipients.gathered
+code: |
+  number_of_document_sheets = (len(document_served_list) + 5) // 6
+  number_of_service_recipient_sheets = (len(service_recipients) + 2) // 3
+  number_of_certificate_sheets = number_of_document_sheets * number_of_service_recipient_sheets
+  certificate_of_service_attachments = [
+    certificate_of_service_attachment[index]
+    for index in range(number_of_certificate_sheets)
+  ]
+---
+depends on:
+  - certificate_of_service_attachments
+code: |
+  certificate_of_service_bundle = pdf_concatenate(
+    certificate_of_service_attachments,
+    filename="Certificate of Service.pdf"
+  )
+---
+attachment:
+  name: Certificate of Service
+  filename: certificate_of_service_${ i + 1 }
+  variable name: certificate_of_service_attachment[i]
+  pdf template file: general_certificate_of_service_600_00264.pdf
+  editable: False
+  fields:
+    - cos_trial_court_county: ${ trial_court.address.county }
+    - cos_trial_court_division: ${ trial_court.division }
+    - cos_docket_number: ${ docket_number }
+    - cos_plaintiff: ${ certificate_caption_plaintiff }
+    - cos_defendant: ${ certificate_caption_defendant }
+    - document_served1: ${ document_served_list[(i % number_of_document_sheets) * 6] if len(document_served_list) > (i % number_of_document_sheets) * 6 else '' }
+    - document_served2: ${ document_served_list[(i % number_of_document_sheets) * 6 + 1] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 1 else '' }
+    - document_served3: ${ document_served_list[(i % number_of_document_sheets) * 6 + 2] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 2 else '' }
+    - document_served4: ${ document_served_list[(i % number_of_document_sheets) * 6 + 3] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 3 else '' }
+    - document_served5: ${ document_served_list[(i % number_of_document_sheets) * 6 + 4] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 4 else '' }
+    - document_served6: ${ document_served_list[(i % number_of_document_sheets) * 6 + 5] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 5 else '' }
+    - people_receiving_service1: ${ service_recipients[(i // number_of_document_sheets) * 3].name if len(service_recipients) > (i // number_of_document_sheets) * 3 else '' }
+    - first_class_mail1: ${ service_recipients[(i // number_of_document_sheets) * 3].first_class_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
+    - personal_delivery1: ${ service_recipients[(i // number_of_document_sheets) * 3].personal_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
+    - by_email1: ${ service_recipients[(i // number_of_document_sheets) * 3].by_email if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
+    - other_delivery1: ${ service_recipients[(i // number_of_document_sheets) * 3].other_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
+    - certified_mail1: ${ service_recipients[(i // number_of_document_sheets) * 3].certified_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
+    - describe_other_delivery1: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3) + '].describe_other_delivery') if len(service_recipients) > (i // number_of_document_sheets) * 3 and service_recipients[(i // number_of_document_sheets) * 3].other_delivery else '' }
+    - service_address1: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3) + '].service_address') if len(service_recipients) > (i // number_of_document_sheets) * 3 else '' }
+    - service_email1: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3) + '].service_email') if len(service_recipients) > (i // number_of_document_sheets) * 3 and service_recipients[(i // number_of_document_sheets) * 3].by_email else '' }
+    - people_receiving_service2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].name if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else '' }
+    - first_class_mail2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].first_class_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
+    - personal_delivery2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].personal_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
+    - by_email2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].by_email if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
+    - other_delivery2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].other_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
+    - certified_mail2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].certified_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
+    - describe_other_delivery2: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 1) + '].describe_other_delivery') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 and service_recipients[(i // number_of_document_sheets) * 3 + 1].other_delivery else '' }
+    - service_address2: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 1) + '].service_address') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else '' }
+    - service_email2: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 1) + '].service_email') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 and service_recipients[(i // number_of_document_sheets) * 3 + 1].by_email else '' }
+    - people_receiving_service3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].name if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else '' }
+    - first_class_mail3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].first_class_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
+    - personal_delivery3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].personal_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
+    - by_email3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].by_email if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
+    - other_delivery3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].other_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
+    - certified_mail3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].certified_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
+    - describe_other_delivery3: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 2) + '].describe_other_delivery') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 and service_recipients[(i // number_of_document_sheets) * 3 + 2].other_delivery else '' }
+    - service_address3: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 2) + '].service_address') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else '' }
+    - service_email3: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 2) + '].service_email') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 and service_recipients[(i // number_of_document_sheets) * 3 + 2].by_email else '' }
+    - cos_signature_date: ${ signature_date }
+    - COS_signature: ${ users[0].signature }
+    - cos_signer_name: ${ printed_signature }
+---
+event: certificate_of_service_download
+question: |
+  ${ download_screen_instructions_headline_one_form }
+subquestion: |
+  ${ download_screen_instructions_one_form }
+
+  <hr>
+
+  <h4 style="margin-bottom: 18px;">Document to download</h4>
+
+  ${ certificate_of_service_bundle }
+
+  <hr>
+
+  ${ download_screen_bottom_instructions }
+
+  ${ collapse_template(not_seeing_email) }
+  ${ collapse_template(log_out_when_done) }
+  ${ thumbs_up_thumbs_down_review }
+
+progress: 100
+attachment code: certificate_of_service_bundle
