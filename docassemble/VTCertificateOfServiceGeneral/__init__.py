@@ -1,2 +1,1 @@
-"""docassemble package for Vermont Certificate of Service interview."""
-
+__version__ = '0.0.1'
