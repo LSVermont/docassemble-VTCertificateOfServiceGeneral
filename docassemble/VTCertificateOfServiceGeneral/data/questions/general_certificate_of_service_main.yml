@@ -71,9 +71,10 @@ code: |
   other_parties.gather()
 
   nav.set_section("case")
-  user_selected_county
+  court_division
+  if division_requires_county:
+    user_selected_county
   trial_court_index
-  trial_court.address.county
   docket_number
 
   nav.set_section("documents")
@@ -227,6 +228,29 @@ code: |
   other_parties[i].name.first
   other_parties[i].complete = True
 ---
+id: court division
+question: |
+  What division is your court case in?
+subquestion: |
+  The court division is usually listed near the top of your court papers.
+fields:
+  - Division: court_division
+    input type: radio
+    choices:
+      - Civil: Civil
+      - Family: Family
+      - Probate: Probate
+      - Criminal: Criminal
+      - Environmental: Environmental
+      - Judicial Bureau: Judicial Bureau
+---
+depends on:
+  - court_division
+code: |
+  division_requires_county = court_division not in ["Environmental", "Judicial Bureau"]
+---
+depends on:
+  - court_division
 id: court county
 question: |
   What county is your court case in?
@@ -235,21 +259,48 @@ subquestion: |
 fields:
   - County: user_selected_county
     code: |
-      sorted(all_courts.unique_column_values('branch') - {"Environmental", "Judicial Bureau"})
+      sorted(
+        set(
+          row["branch"]
+          for index, row in all_courts._load_courts().iterrows()
+          if row["division"].replace(" Division", "") == court_division
+          and row["branch"] not in ["Environmental", "Judicial Bureau"]
+        )
+      )
 ---
-id: court information
-question: |
-  Which court is your case in?
-subquestion: |
-  The court unit is usually listed at the top-left of your court papers.
-fields:
-  - Court: trial_court_index
-    code: |
-      [
-        (index, "{} {}".format(row["address_county"], row["division"]))
-        for index, row in all_courts._load_courts().iterrows()
-        if row["branch"] == user_selected_county
-      ]
+depends on:
+  - court_division
+code: |
+  certificate_court_division = court_division.replace(" Division", "")
+---
+depends on:
+  - court_division
+  - division_requires_county
+  - user_selected_county
+code: |
+  matching_court_indices = [
+    index
+    for index, row in all_courts._load_courts().iterrows()
+    if (
+      (
+        not division_requires_county
+        and row["branch"] == court_division
+      )
+      or
+      (
+        division_requires_county
+        and row["division"].replace(" Division", "") == court_division
+        and row["branch"] == user_selected_county
+      )
+    )
+  ]
+
+  if len(matching_court_indices) == 1:
+    trial_court_index = matching_court_indices[0]
+  elif len(matching_court_indices) == 0:
+    validation_error("No court matched the division and county you selected.")
+  else:
+    trial_court_index = matching_court_indices[0]
 ---
 id: case number
 question: |
@@ -263,6 +314,11 @@ subquestion: |
 fields:
   - Case number: docket_number
     required: False
+---
+depends on:
+  - trial_court_index
+code: |
+  trial_court = all_courts.as_court("trial_court", trial_court_index)
 ---
 id: documents served
 question: |
@@ -320,8 +376,9 @@ question: |
   Did you serve another document that was not listed?
 subquestion: |
   You told us about these "other" documents:
+  
   % for other_document in other_documents_served:
-  - { other_document.name }
+    - ${ other_document.name }
   % endfor
 
   Do you have another document that was not listed?
@@ -510,15 +567,8 @@ attachment:
   pdf template file: general_certificate_of_service_600_00264.pdf
   editable: False
   fields:
-    - cos_trial_court_county: ${ trial_court.address.county }
-    - cos_trial_court_division: |
-        % if trial_court.division == "Civil Division":
-        CIVIL
-        % elif trial_court.division == "Family Division":
-        FAMILY
-        % elif trial_court.division == "Probate Division":
-        PROBATE
-        % endif
+    - cos_trial_court_county: ${ trial_court.address.county if division_requires_county else "" }
+    - cos_trial_court_division: ${ certificate_court_division }
     - cos_docket_number: ${ docket_number }
     - cos_plaintiff: ${ certificate_caption_plaintiff }
     - cos_defendant: ${ certificate_caption_defendant }
