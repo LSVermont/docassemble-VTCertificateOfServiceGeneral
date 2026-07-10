@@ -568,7 +568,7 @@ attachment:
   editable: False
   fields:
     - cos_trial_court_county: ${ trial_court.address.county if division_requires_county else "" }
-    - cos_trial_court_division: ${ certificate_court_division }
+    - cos_trial_court_division: ${ certificate_court_division.upper() }
     - cos_docket_number: ${ docket_number }
     - cos_plaintiff: ${ certificate_caption_plaintiff }
     - cos_defendant: ${ certificate_caption_defendant }
