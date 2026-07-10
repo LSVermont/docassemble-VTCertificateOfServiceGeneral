@@ -4,12 +4,12 @@ include:
   - docassemble.VTSharedYMLFile:VTSharedYMLFile.yml
 ---
 metadata:
-  title: Certificate of Service
-  short title: Certificate of Service
+  title: Certificate of Service - General
+  short title: Certificate of Service - General
   description: >-
     Complete Vermont Judiciary Form 600-00264, Certificate of Service.
   original_form:
-    - general_certificate_of_service_600_00264.pdf
+    - https://www.vermontjudiciary.org/media/11
 ---
 objects:
   - all_courts: ALCourtLoader.using(file_name='docassemble.VTSharedYMLFile:data/sources/courts_list_full.xlsx')
@@ -21,12 +21,13 @@ objects:
 ---
 sections:
   - intro: Introduction
-  - parties: Parties
+  - about_you: About you
+  - other_party: The other party
   - case: Court case
   - documents: Documents served
   - service: Service details
   - review_certificate: <i class="fa-solid fa-pencil"></i> <u>Edit your answers</u>
-  - sign: Signature
+  - sign: Sign your document
   - get_docs: Get your document
 progressive: False
 ---
@@ -60,11 +61,13 @@ mandatory: True
 code: |
   nav.set_section("intro")
   intro_screen
+  important_notes_to_user
 
-  nav.set_section("parties")
+  nav.set_section("about_you")
   users[0].complete
   user_role
   users.gather()
+  nav.set_section("other_party")
   other_parties.gather()
 
   nav.set_section("case")
@@ -87,8 +90,9 @@ code: |
   ### add review screen ###
 
   nav.set_section("sign")
-  attestation
-  al_form_requires_digital_signature = True
+  al_form_requires_digital_signature = False
+  signature_date
+  signature_choice
   basic_questions_signature_flow
 
   nav.set_section("get_docs")
@@ -96,14 +100,44 @@ code: |
 ---
 event: intro_screen
 question: |
-  Certificate of Service
+  Fill out a Certificate of Service form in Vermont
 subquestion: |
   ${ intro_vtcourtforms_3_steps }
 
+  <i class="fas fa-file-text fa-2x"></i> This tool helps you fill out a Certificate of Service form for the court. It is used to show the court that you have sent court papers and other documents to the other party in your court case.
+  
+  <i class="fas fa-clock fa-2x"></i> It may take you 15 minutes to complete this.
+  
+  <i class="fas fa-circle-info fa-2x"></i> It is free to use this program. This site is not a lawyer.
+
   ${ intro_vtcourtforms_created_by }
+continue button field: intro_screen
+---
+id: important_notes_to_user
+question: |
+  Important
+subquestion: |  
+  "Serving" papers means sending or delivering a copy of the papers you file with the court to the other party in the case.
+  
+   Be sure to find out what kind of "service" is required for your kind of court case. See the [VTLawHelp.org](https://vtlawhelp.org) or [Vermont Judiciary](https://www.vtcourts.gov/) website for more information. For example, follow this link for [information on how to serve documents in Family Division cases.](https://www.vtcourts.gov/family/divorce/serving-papers)
+
+  <h4>About this tool</h4>
 
   ${ intro_how_to_edit_answers }
-continue button field: intro_screen
+
+  <h4>Our terms of use</h4>
+  
+fields:
+  - To continue, please accept our [terms of use](https://vtlawhelp.org/vtcourtforms/terms-of-use).: acknowledged_information_use
+    datatype: checkboxes
+    none of the above: False    
+    minlength: 1
+    choices:
+      - I accept the terms of use.
+    validation messages:
+      minlength: |
+        You cannot continue unless you agree to the terms of use.
+continue button field: important_notes_to_user
 ---
 id: your name
 sets:
@@ -131,7 +165,7 @@ fields:
 ---
 id: any other users
 question: |
-  Are there any other ${ user_role }s named with you in the case?
+  Are there any other ${ user_role }s named in the case?
 yesno: users.there_is_another
 ---
 id: additional user name
@@ -156,9 +190,11 @@ id: other party name
 sets:
   - other_parties[0].name.first
 question: |
-  What is the first ${ other_parties_role }'s name?
+  What is the ${ other_parties_role }'s name?
 subquestion: |
-  Enter the name as it appears in the case caption.
+  Enter the name as it appears on court papers.
+  
+  If there is more than one plaintiff, we'll collect their names one at a time. Enter the first name that is listed on the court papers.
 fields:
   - First name or business name: other_parties[0].name.first
   - Middle name: other_parties[0].name.middle
@@ -219,7 +255,11 @@ id: case number
 question: |
   What is the case number?
 subquestion: |
-  The case number is usually listed near the top of your court papers. You can leave this blank if you do not know it.
+  If you have papers from the court, find the case number. It's usually in the upper-right corner.
+
+  It will look like one of these examples: 25-DM-00000 or 1234-00-00 Cndm.
+  
+  You can leave this blank if you do not know your case number.
 fields:
   - Case number: docket_number
     required: False
@@ -228,7 +268,7 @@ id: documents served
 question: |
   What documents did you serve?
 subquestion: |
-  Select every document that you delivered to the other party or parties.
+  Select every document that you delivered to the other party or parties. We have listed common court documents, but you can choose Other and enter the name of another kind of document.
 fields:
   - no label: documents_served
     datatype: checkboxes
@@ -237,22 +277,22 @@ fields:
       - Notice of Appearance
       - Summons
       - Complaint
-      - Exhibits
       - Affidavit
-      - Application to Waive Filing Fees and Service Costs
-      - Notice of Court Decision of Application to Waive Fees and Costs
-      - Notice of Hearing
-      - Motion for Default Judgment
-      - Motion to Dismiss
       - Answer
       - Counterclaim
+      - Exhibits
+      - Motion to Dismiss
+      - Motion for Default Judgment
+      - Application to Waive Filing Fees and Service Costs
+      - Notice of Court Decision of Application to Waive Fees and Costs
       - Disclosure of Exempt Income
-      - Motion for Financial Disclosure
       - Financial Disclosure Affidavit
+      - Motion for Financial Disclosure
       - Financial Disclosure Order
       - Financial Affidavit Form 813A
       - Financial Affidavit Form 813B
       - Default Judgment
+      - Notice of Hearing
       - Notice of Appeal
       - Notice of Action and Request for Waiver of Service of Summons
       - Information and Instructions for the Defendant
@@ -278,6 +318,13 @@ code: |
 id: any other other documents served
 question: |
   Did you serve another document that was not listed?
+subquestion: |
+  You told us about these "other" documents:
+  % for other_document in other_documents_served:
+  - { other_document.name }
+  % endfor
+
+  Do you have another document that was not listed?
 yesno: other_documents_served.there_is_another
 ---
 depends on:
@@ -292,8 +339,10 @@ code: |
 id: service recipient details
 question: |
   Who did you serve?
+subquestion: |
+  If you sent or delivered documents to more than one person, we'll collect that information one at a time. 
 fields:
-  - Name of person or party served: service_recipients[i].selected_name
+  - Name of person, lawyer or business you sent the documents to: service_recipients[i].selected_name
     input type: radio
     code: |
       [str(party) for party in other_parties] + ["Someone else"]
@@ -321,21 +370,24 @@ fields:
     datatype: yesno
   - By email: service_recipients[i].by_email
     datatype: yesno
-    help: The party must have consented to receive documents by email.
+    help: The other party must have consented to receive documents by email.
   - By certified mail: service_recipients[i].certified_mail
     datatype: yesno
-    help: Attach the return receipt to this certificate.
+    help: You will include the return receipt with this form.
   - Other way: service_recipients[i].other_delivery
     datatype: yesno
   - Explain the other way you served them: service_recipients[i].describe_other_delivery
     show if: service_recipients[i].other_delivery
     required: False
-  - Mailing or physical address used: service_recipients[i].service_address
+  - Mailing address used (enter in one line): service_recipients[i].service_address
     datatype: text
     js show if: |
       val("service_recipients[i].first_class_mail") ||
-      val("service_recipients[i].personal_delivery") ||
       val("service_recipients[i].certified_mail")
+  - Physical address used (enter in one line): service_recipients[i].service_address
+    datatype: text
+    js show if: |
+      val("service_recipients[i].personal_delivery")
   - Email address used: service_recipients[i].service_email
     datatype: email
     required: False
@@ -384,6 +436,53 @@ continue button field: certificate_preview_question
 code: |
   signature_fields = ['users[0].signature']
 ---
+id: Signing your forms
+question: |
+  Date of your signature
+fields:
+  - "This is how your name will appear under your signature.": printed_signature
+    default: |
+      ${ users[0].name }
+    maxlength: 34
+  - "Date of your signature for these forms": signature_date
+    datatype: date
+    required: False
+    default: |
+      ${ today() }
+  -  note: |
+       You can change this date later if you want.
+       
+       **Tap Next to choose how to sign your documents.**
+---
+id: User signature
+question: |
+  User signature
+continue button field: User_signature
+---
+id: signature choice
+decoration: file-signature
+question: |
+  Your documents are almost ready
+subquestion: |
+  How do you want to sign them?
+fields: 
+  - I will sign: signature_choice
+    input type: radio
+    choices:
+      - On my computer or phone: this_device
+    show if:
+      code: |
+        al_form_requires_digital_signature
+  - I will sign: signature_choice
+    input type: radio
+    choices:
+      - On my computer or phone: this_device
+      - On the paper with a pen after I print the documents: sign_after_printing
+    show if:
+      code: |
+        not al_form_requires_digital_signature
+continue button field: saw_signature_choice    
+---
 depends on:
   - document_served_list
   - service_recipients.gathered
@@ -412,7 +511,14 @@ attachment:
   editable: False
   fields:
     - cos_trial_court_county: ${ trial_court.address.county }
-    - cos_trial_court_division: ${ trial_court.division }
+    - cos_trial_court_division: |
+        % if trial_court.division == "Civil Division":
+        CIVIL
+        % elif trial_court.division == "Family Division":
+        FAMILY
+        % elif trial_court.division == "Probate Division":
+        PROBATE
+        % endif
     - cos_docket_number: ${ docket_number }
     - cos_plaintiff: ${ certificate_caption_plaintiff }
     - cos_defendant: ${ certificate_caption_defendant }
