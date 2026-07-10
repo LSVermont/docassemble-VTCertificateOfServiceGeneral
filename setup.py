@@ -53,7 +53,7 @@ setup(name='docassemble.VTCertificateOfServiceGeneral',
       license='',
       url='https://docassemble.org',
       packages=find_namespace_packages(),
-      install_requires=['docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main', 'docassemble.GithubFeedbackForm @ git+https://github.com/SuffolkLITLab/docassemble-GithubFeedbackForm.git@main', 'docassemble.VTFeedback @ git+https://github.com/VTskier/docassemble-VTFeedback.git@main'],
+      install_requires=['docassemble.AssemblyLine>=4.6.0', 'docassemble.GithubFeedbackForm>=0.5.6', 'docassemble.VTFeedback @ git+https://github.com/LSVermont/docassemble-VTFeedback.git@main'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/VTCertificateOfServiceGeneral/', package='docassemble.VTCertificateOfServiceGeneral'),
      )
