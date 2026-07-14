@@ -436,43 +436,97 @@ fields:
   - Explain the other way you served them: service_recipients[i].describe_other_delivery
     show if: service_recipients[i].other_delivery
     required: False
-  - Mailing address used (enter in one line): service_recipients[i].service_address
+  - Mailing address used (enter in one line): service_recipients[i].mailing_service_address
     datatype: text
+    required: False
     js show if: |
       val("service_recipients[i].first_class_mail") ||
       val("service_recipients[i].certified_mail")
-  - Physical address used (enter in one line): service_recipients[i].service_address
+  - Physical address used (enter in one line): service_recipients[i].physical_service_address
     datatype: text
+    required: False
     js show if: |
       val("service_recipients[i].personal_delivery")
+  - "Address used for other service method, if any (enter in one line)": service_recipients[i].other_service_address
+    datatype: text
+    required: False
+    js show if: |
+      val("service_recipients[i].other_delivery")
   - Email address used: service_recipients[i].service_email
     datatype: email
     required: False
     show if: service_recipients[i].by_email
+
 validation code: |
-  if not (service_recipients[i].first_class_mail or service_recipients[i].personal_delivery or service_recipients[i].by_email or service_recipients[i].certified_mail or service_recipients[i].other_delivery):
+  if not (
+    service_recipients[i].first_class_mail
+    or service_recipients[i].personal_delivery
+    or service_recipients[i].by_email
+    or service_recipients[i].certified_mail
+    or service_recipients[i].other_delivery
+  ):
     validation_error("Select at least one way you served this person or party.")
-  if service_recipients[i].by_email and not service_recipients[i].service_email:
+
+  if (
+    service_recipients[i].first_class_mail
+    or service_recipients[i].certified_mail
+  ) and not showifdef("service_recipients[i].mailing_service_address").strip():
+    validation_error("Enter the mailing address you used.", field="service_recipients[i].mailing_service_address")
+
+  if service_recipients[i].personal_delivery and not showifdef("service_recipients[i].physical_service_address").strip():
+    validation_error("Enter the physical address you used.", field="service_recipients[i].physical_service_address")
+
+  if service_recipients[i].by_email and not showifdef("service_recipients[i].service_email").strip():
     validation_error("Enter the email address you used.", field="service_recipients[i].service_email")
-  if (service_recipients[i].first_class_mail or service_recipients[i].personal_delivery or service_recipients[i].certified_mail or service_recipients[i].other_delivery) and not service_recipients[i].service_address:
-    validation_error("Enter the mailing or physical address you used.", field="service_recipients[i].service_address")
+
+  if service_recipients[i].other_delivery and not showifdef("service_recipients[i].describe_other_delivery").strip():
+    validation_error("Explain the other way you served them.", field="service_recipients[i].describe_other_delivery")
 ---
 code: |
   if service_recipients[i].selected_name == "Someone else":
     service_recipients[i].name = service_recipients[i].new_name
   else:
     service_recipients[i].name = service_recipients[i].selected_name
+
   service_recipients[i].name
   service_recipients[i].first_class_mail
   service_recipients[i].personal_delivery
   service_recipients[i].by_email
   service_recipients[i].certified_mail
   service_recipients[i].other_delivery
+
   if service_recipients[i].by_email:
     service_recipients[i].service_email
-  if service_recipients[i].first_class_mail or service_recipients[i].personal_delivery or service_recipients[i].certified_mail or service_recipients[i].other_delivery:
-    service_recipients[i].service_address
+
+  if service_recipients[i].first_class_mail or service_recipients[i].certified_mail:
+    service_recipients[i].mailing_service_address
+
+  if service_recipients[i].personal_delivery:
+    service_recipients[i].physical_service_address
+
+  if service_recipients[i].other_delivery:
+    service_recipients[i].describe_other_delivery
+
+  service_recipients[i].service_address
   service_recipients[i].complete = True
+---
+depends on:
+  - service_recipients[i].mailing_service_address
+  - service_recipients[i].physical_service_address
+  - service_recipients[i].other_service_address
+code: |
+  service_address_parts = []
+
+  if defined("service_recipients[i].mailing_service_address"):
+    service_address_parts.append(service_recipients[i].mailing_service_address)
+
+  if defined("service_recipients[i].physical_service_address"):
+    service_address_parts.append(service_recipients[i].physical_service_address)
+
+  if defined("service_recipients[i].other_service_address"):
+    service_address_parts.append(service_recipients[i].other_service_address)
+
+  service_recipients[i].service_address = "; ".join(service_address_parts)
 ---
 id: any other service recipients
 question: |
