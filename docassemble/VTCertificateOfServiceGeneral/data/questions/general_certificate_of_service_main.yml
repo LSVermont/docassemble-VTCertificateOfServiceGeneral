@@ -17,7 +17,6 @@ objects:
   - other_parties: ALPeopleList.using(ask_number=False, minimum_number=1, complete_attribute='complete')
   - service_recipients: DAList.using(object_type=DAObject, minimum_number=1, complete_attribute='complete')
   - other_documents_served: DAList.using(object_type=DAObject, ask_number=False, minimum_number=1, complete_attribute='complete')
-  - certificate_of_service_attachment: DAList.using(auto_gather=False, gathered=True)
 ---
 sections:
   - intro: Introduction
@@ -29,7 +28,6 @@ sections:
   - review_certificate: <i class="fa-solid fa-pencil"></i> <u>Edit your answers</u>
   - sign: Sign your document
   - get_docs: Get your document
-progressive: False
 ---
 code: |
   users1_role = "role_" + user_role
@@ -508,25 +506,90 @@ code: |
     service_recipients[i].describe_other_delivery
 
   service_recipients[i].service_address
+
+  service_method_labels = []
+  if service_recipients[i].first_class_mail:
+    service_method_labels.append("By first class mail")
+  if service_recipients[i].personal_delivery:
+    service_method_labels.append("By hand delivery")
+  if service_recipients[i].by_email:
+    service_method_labels.append("By email")
+  if service_recipients[i].certified_mail:
+    service_method_labels.append("By certified mail")
+  if service_recipients[i].other_delivery:
+    service_method_labels.append("Other way: " + service_recipients[i].describe_other_delivery)
+  service_recipients[i].service_methods = ", ".join(service_method_labels)
+
   service_recipients[i].complete = True
 ---
 depends on:
+  - service_recipients[i].first_class_mail
+  - service_recipients[i].personal_delivery
+  - service_recipients[i].by_email
+  - service_recipients[i].certified_mail
+  - service_recipients[i].other_delivery
   - service_recipients[i].mailing_service_address
   - service_recipients[i].physical_service_address
+  - service_recipients[i].service_email
   - service_recipients[i].other_service_address
 code: |
   service_address_parts = []
+  addendum_service_address_parts = []
 
-  if defined("service_recipients[i].mailing_service_address"):
-    service_address_parts.append(service_recipients[i].mailing_service_address)
+  # By first class mail
+  if (
+    service_recipients[i].first_class_mail
+    and showifdef("service_recipients[i].mailing_service_address").strip()
+  ):
+    mailing_address = service_recipients[i].mailing_service_address.strip()
+    service_address_parts.append(mailing_address)
+    addendum_service_address_parts.append(mailing_address)
 
-  if defined("service_recipients[i].physical_service_address"):
-    service_address_parts.append(service_recipients[i].physical_service_address)
+  # By hand delivery
+  if (
+    service_recipients[i].personal_delivery
+    and showifdef("service_recipients[i].physical_service_address").strip()
+  ):
+    physical_address = service_recipients[i].physical_service_address.strip()
+    service_address_parts.append(physical_address)
+    addendum_service_address_parts.append(physical_address)
 
-  if defined("service_recipients[i].other_service_address"):
-    service_address_parts.append(service_recipients[i].other_service_address)
+  # By email
+  if (
+    service_recipients[i].by_email
+    and showifdef("service_recipients[i].service_email").strip()
+  ):
+    addendum_service_address_parts.append(
+      service_recipients[i].service_email.strip()
+    )
+
+  # By certified mail
+  if (
+    service_recipients[i].certified_mail
+    and showifdef("service_recipients[i].mailing_service_address").strip()
+  ):
+    mailing_address = service_recipients[i].mailing_service_address.strip()
+
+    if mailing_address not in service_address_parts:
+      service_address_parts.append(mailing_address)
+
+    if mailing_address not in addendum_service_address_parts:
+      addendum_service_address_parts.append(mailing_address)
+
+  # Other way
+  if (
+    service_recipients[i].other_delivery
+    and showifdef("service_recipients[i].other_service_address").strip()
+  ):
+    other_address = service_recipients[i].other_service_address.strip()
+    service_address_parts.append(other_address)
+    addendum_service_address_parts.append(other_address)
 
   service_recipients[i].service_address = "; ".join(service_address_parts)
+
+  service_recipients[i].addendum_service_addresses = ", ".join(
+    addendum_service_address_parts
+  )
 ---
 id: any other service recipients
 question: |
@@ -535,13 +598,19 @@ yesno: service_recipients.there_is_another
 ---
 id: certificate preview
 question: |
-  Review your answers before you sign
+  Preview your form before you sign it
 subquestion: |
-  Select "Edit your answers" to review or change your answers.
+  Here is a preview of the form you will sign on the next screen.
+
+  ${ al_court_bundle.as_pdf(key='preview') }
+  
+  Click the image to view it in a new tab. **Remember to come back to this screen to edit the form and/or finish the form.**
+  
+  Click the "Edit your answers" button to make changes.
 
   ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
 
-  When you are done reviewing, come back to this screen and select "Next."
+  **Tap Next to choose how to sign your form.**
 continue button field: certificate_preview_question
 ---
 code: |
@@ -565,11 +634,6 @@ fields:
        
        **Tap Next to choose how to sign your documents.**
 ---
-id: User signature
-question: |
-  User signature
-continue button field: User_signature
----
 id: signature choice
 decoration: file-signature
 question: |
@@ -592,96 +656,110 @@ fields:
     show if:
       code: |
         not al_form_requires_digital_signature
-continue button field: saw_signature_choice    
+continue button field: saw_signature_choice
 ---
-depends on:
-  - document_served_list
-  - service_recipients.gathered
-code: |
-  number_of_document_sheets = (len(document_served_list) + 5) // 6
-  number_of_service_recipient_sheets = (len(service_recipients) + 2) // 3
-  number_of_certificate_sheets = number_of_document_sheets * number_of_service_recipient_sheets
-  certificate_of_service_attachments = [
-    certificate_of_service_attachment[index]
-    for index in range(number_of_certificate_sheets)
-  ]
----
-depends on:
-  - certificate_of_service_attachments
-code: |
-  certificate_of_service_bundle = pdf_concatenate(
-    certificate_of_service_attachments,
-    filename="Certificate of Service.pdf"
-  )
----
-attachment:
-  name: Certificate of Service
-  filename: certificate_of_service_${ i + 1 }
-  variable name: certificate_of_service_attachment[i]
-  pdf template file: general_certificate_of_service_600_00264.pdf
-  editable: False
-  fields:
-    - cos_trial_court_county: ${ trial_court.address.county if division_requires_county else "" }
-    - cos_trial_court_division: ${ certificate_court_division.upper() }
-    - cos_docket_number: ${ docket_number }
-    - cos_plaintiff: ${ certificate_caption_plaintiff }
-    - cos_defendant: ${ certificate_caption_defendant }
-    - document_served1: ${ document_served_list[(i % number_of_document_sheets) * 6] if len(document_served_list) > (i % number_of_document_sheets) * 6 else '' }
-    - document_served2: ${ document_served_list[(i % number_of_document_sheets) * 6 + 1] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 1 else '' }
-    - document_served3: ${ document_served_list[(i % number_of_document_sheets) * 6 + 2] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 2 else '' }
-    - document_served4: ${ document_served_list[(i % number_of_document_sheets) * 6 + 3] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 3 else '' }
-    - document_served5: ${ document_served_list[(i % number_of_document_sheets) * 6 + 4] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 4 else '' }
-    - document_served6: ${ document_served_list[(i % number_of_document_sheets) * 6 + 5] if len(document_served_list) > (i % number_of_document_sheets) * 6 + 5 else '' }
-    - people_receiving_service1: ${ service_recipients[(i // number_of_document_sheets) * 3].name if len(service_recipients) > (i // number_of_document_sheets) * 3 else '' }
-    - first_class_mail1: ${ service_recipients[(i // number_of_document_sheets) * 3].first_class_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
-    - personal_delivery1: ${ service_recipients[(i // number_of_document_sheets) * 3].personal_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
-    - by_email1: ${ service_recipients[(i // number_of_document_sheets) * 3].by_email if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
-    - other_delivery1: ${ service_recipients[(i // number_of_document_sheets) * 3].other_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
-    - certified_mail1: ${ service_recipients[(i // number_of_document_sheets) * 3].certified_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 else False }
-    - describe_other_delivery1: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3) + '].describe_other_delivery') if len(service_recipients) > (i // number_of_document_sheets) * 3 and service_recipients[(i // number_of_document_sheets) * 3].other_delivery else '' }
-    - service_address1: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3) + '].service_address') if len(service_recipients) > (i // number_of_document_sheets) * 3 else '' }
-    - service_email1: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3) + '].service_email') if len(service_recipients) > (i // number_of_document_sheets) * 3 and service_recipients[(i // number_of_document_sheets) * 3].by_email else '' }
-    - people_receiving_service2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].name if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else '' }
-    - first_class_mail2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].first_class_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
-    - personal_delivery2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].personal_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
-    - by_email2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].by_email if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
-    - other_delivery2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].other_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
-    - certified_mail2: ${ service_recipients[(i // number_of_document_sheets) * 3 + 1].certified_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else False }
-    - describe_other_delivery2: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 1) + '].describe_other_delivery') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 and service_recipients[(i // number_of_document_sheets) * 3 + 1].other_delivery else '' }
-    - service_address2: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 1) + '].service_address') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 else '' }
-    - service_email2: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 1) + '].service_email') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 1 and service_recipients[(i // number_of_document_sheets) * 3 + 1].by_email else '' }
-    - people_receiving_service3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].name if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else '' }
-    - first_class_mail3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].first_class_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
-    - personal_delivery3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].personal_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
-    - by_email3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].by_email if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
-    - other_delivery3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].other_delivery if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
-    - certified_mail3: ${ service_recipients[(i // number_of_document_sheets) * 3 + 2].certified_mail if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else False }
-    - describe_other_delivery3: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 2) + '].describe_other_delivery') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 and service_recipients[(i // number_of_document_sheets) * 3 + 2].other_delivery else '' }
-    - service_address3: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 2) + '].service_address') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 else '' }
-    - service_email3: ${ showifdef('service_recipients[' + str((i // number_of_document_sheets) * 3 + 2) + '].service_email') if len(service_recipients) > (i // number_of_document_sheets) * 3 + 2 and service_recipients[(i // number_of_document_sheets) * 3 + 2].by_email else '' }
-    - cos_signature_date: ${ signature_date }
-    - COS_signature: ${ users[0].signature }
-    - cos_signer_name: ${ printed_signature }
----
+id: download screen
 event: certificate_of_service_download
 question: |
-  ${ download_screen_instructions_headline_one_form }
+  ${ download_screen_instructions_headline }
 subquestion: |
-  ${ download_screen_instructions_one_form }
+  ${ download_screen_instructions }
+
+  ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
 
   <hr>
+  
+  <h4 style="margin-bottom: 18px;">Documents to download</h4>
+  <i class="fa fa-exclamation-circle fa-2x"></i>   Download **all** of these documents.
+  
+  You will need to file or deliver your Certificate of Service form to the court. Keep a copy for your records.
+  
+  ${ al_user_bundle.download_list_html() }
 
-  <h4 style="margin-bottom: 18px;">Document to download</h4>
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-  ${ certificate_of_service_bundle }
-
-  <hr>
-
+  <hr>  
+  
   ${ download_screen_bottom_instructions }
-
+  
   ${ collapse_template(not_seeing_email) }
   ${ collapse_template(log_out_when_done) }
   ${ thumbs_up_thumbs_down_review }
 
 progress: 100
-attachment code: certificate_of_service_bundle
+attachment code: al_user_bundle
+---
+##################### ATTACHMENTS #####################
+---
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[
+      certificate_of_service_attachment],
+      filename="certificate_of_service", title="Download all forms", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[
+      certificate_of_service_attachment],
+      filename="certificate_of_service", title="Form to file with the court", enabled=True)
+---
+objects:
+  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service.pdf", enabled=True, has_addendum=True)
+---
+attachment:
+  variable name: certificate_of_service_attachment.addendum
+  docx template file: certificate_of_service_addendum.docx
+---
+code: |
+  certificate_of_service_attachment.overflow_fields['document_served_list'].overflow_trigger = 6
+
+  certificate_of_service_attachment.overflow_fields['service_recipients'].overflow_trigger = 3
+  
+  certificate_of_service_attachment.overflow_fields.gathered = True
+---
+attachment:
+  name: Certificate of Service
+  filename: certificate_of_service
+  variable name: certificate_of_service_attachment[i]
+  pdf template file: general_certificate_of_service_600_00264.pdf
+  editable: False
+  skip undefined: True
+  fields:
+    - cos_trial_court_county: ${ user_selected_county if division_requires_county else "" }
+    - cos_trial_court_division: ${ certificate_court_division.upper() }
+    - cos_docket_number: ${ docket_number }
+    - cos_plaintiff: ${ certificate_caption_plaintiff }
+    - cos_defendant: ${ certificate_caption_defendant }
+    - document_served1: ${ document_served_list[0] if len(document_served_list) > 0 else "" }
+    - document_served2: ${ document_served_list[1] if len(document_served_list) > 1 else "" }
+    - document_served3: ${ document_served_list[2] if len(document_served_list) > 2 else "" }
+    - document_served4: ${ document_served_list[3] if len(document_served_list) > 3 else "" }
+    - document_served5: ${ document_served_list[4] if len(document_served_list) > 4 else "" }
+    - document_served6: ${ document_served_list[5] if len(document_served_list) > 5 else "" }
+    - people_receiving_service1: ${ service_recipients[0].name if len(service_recipients) > 0 else '' }
+    - first_class_mail1: ${ service_recipients[0].first_class_mail if len(service_recipients) > 0 else False }
+    - personal_delivery1: ${ service_recipients[0].personal_delivery if len(service_recipients) > 0 else False }
+    - by_email1: ${ service_recipients[0].by_email if len(service_recipients) > 0 else False }
+    - other_delivery1: ${ service_recipients[0].other_delivery if len(service_recipients) > 0 else False }
+    - certified_mail1: ${ service_recipients[0].certified_mail if len(service_recipients) > 0 else False }
+    - describe_other_delivery1: ${ showifdef('service_recipients[0].describe_other_delivery') if len(service_recipients) > 0 and service_recipients[0].other_delivery else '' }
+    - service_address1: ${ showifdef('service_recipients[0].service_address') if len(service_recipients) > 0 else '' }
+    - service_email1: ${ showifdef('service_recipients[0].service_email') if len(service_recipients) > 0 and service_recipients[0].by_email else '' }
+    - people_receiving_service2: ${ service_recipients[1].name if len(service_recipients) > 1 else '' }
+    - first_class_mail2: ${ service_recipients[1].first_class_mail if len(service_recipients) > 1 else False }
+    - personal_delivery2: ${ service_recipients[1].personal_delivery if len(service_recipients) > 1 else False }
+    - by_email2: ${ service_recipients[1].by_email if len(service_recipients) > 1 else False }
+    - other_delivery2: ${ service_recipients[1].other_delivery if len(service_recipients) > 1 else False }
+    - certified_mail2: ${ service_recipients[1].certified_mail if len(service_recipients) > 1 else False }
+    - describe_other_delivery2: ${ showifdef('service_recipients[1].describe_other_delivery') if len(service_recipients) > 1 and service_recipients[1].other_delivery else '' }
+    - service_address2: ${ showifdef('service_recipients[1].service_address') if len(service_recipients) > 1 else '' }
+    - service_email2: ${ showifdef('service_recipients[1].service_email') if len(service_recipients) > 1 and service_recipients[1].by_email else '' }
+    - people_receiving_service3: ${ service_recipients[2].name if len(service_recipients) > 2 else '' }
+    - first_class_mail3: ${ service_recipients[2].first_class_mail if len(service_recipients) > 2 else False }
+    - personal_delivery3: ${ service_recipients[2].personal_delivery if len(service_recipients) > 2 else False }
+    - by_email3: ${ service_recipients[2].by_email if len(service_recipients) > 2 else False }
+    - other_delivery3: ${ service_recipients[2].other_delivery if len(service_recipients) > 2 else False }
+    - certified_mail3: ${ service_recipients[2].certified_mail if len(service_recipients) > 2 else False }
+    - describe_other_delivery3: ${ showifdef('service_recipients[2].describe_other_delivery') if len(service_recipients) > 2 and service_recipients[2].other_delivery else '' }
+    - service_address3: ${ showifdef('service_recipients[2].service_address') if len(service_recipients) > 2 else '' }
+    - service_email3: ${ showifdef('service_recipients[2].service_email') if len(service_recipients) > 2 and service_recipients[2].by_email else '' }
+    - cos_signature_date: ${ signature_date }
+    - COS_signature: ${ users[0].signature }
+    - cos_signer_name: ${ printed_signature }
+---
