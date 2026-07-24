@@ -6,16 +6,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.VTCertificateOfServiceGeneral"
-version = "0.0.1"
-description = "General Certificate of Service form 600-00264."
+version = "1.0"
+description = "General Certificate of Service form 600-00264"
 readme = "README.md"
 authors = [
-    { name = "Legal Services Vermont and Lemma Legal", email = "kelizamcguire@gmail.com" },
+    { name = "Legal Services Vermont and Lemma Legal", email = "ksurette@legalservicesvt.org" },
 ]
 dependencies = []
+license = "MIT"
+license-files = [
+    "LICENSE",
+]
 
 [project.urls]
-Homepage = "https://docassemble.org"
+Homepage = "https://VTLawHelp.org"
 
 [tool.setuptools.packages.find]
 where = [

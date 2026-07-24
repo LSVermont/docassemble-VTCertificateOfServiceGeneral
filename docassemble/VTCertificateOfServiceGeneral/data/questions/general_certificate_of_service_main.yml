@@ -7,7 +7,7 @@ metadata:
   title: Certificate of Service - General
   short title: Certificate of Service - General
   description: >-
-    Complete Vermont Judiciary Form 600-00264, Certificate of Service.
+    Fill out a Certificate of Service form in Vermont. Based on paper version of Vermont Judiciary Form 600-00264 (1/2026).
   original_form:
     - https://www.vermontjudiciary.org/media/11
 ---
@@ -85,6 +85,9 @@ code: |
   service_recipients.gather()
 
   nav.set_section("review_certificate")
+  certificate_caption_plaintiff
+  certificate_caption_defendant
+  certificate_court_division
   certificate_preview_question
   ### add review screen ###
 
@@ -95,6 +98,9 @@ code: |
   basic_questions_signature_flow
 
   nav.set_section("get_docs")
+  certificate_caption_plaintiff
+  certificate_caption_defendant
+  certificate_court_division
   certificate_of_service_download
 ---
 event: intro_screen
@@ -118,7 +124,9 @@ question: |
 subquestion: |  
   "Serving" papers means sending or delivering a copy of the papers you file with the court to the other party in the case.
   
-   Be sure to find out what kind of "service" is required for your kind of court case. See the [VTLawHelp.org](https://vtlawhelp.org) or [Vermont Judiciary](https://www.vtcourts.gov/) website for more information. For example, follow this link for [information on how to serve documents in Family Division cases.](https://www.vtcourts.gov/family/divorce/serving-papers)
+  Be sure to find out what kind of "service" is required for your kind of court case. See the [VTLawHelp.org](https://vtlawhelp.org) or [Vermont Judiciary](https://www.vtcourts.gov/) website for more information. For example, follow this link for [information on how to serve documents in Family Division cases.](https://www.vtcourts.gov/family/divorce/serving-papers)
+
+  For this tool, you will need the mailing address, physical address or email address of the other party/parties.  
 
   <h4>About this tool</h4>
 
@@ -165,6 +173,8 @@ fields:
 id: any other users
 question: |
   Are there any other ${ user_role }s named in the case?
+subquestion: |
+  Tip: Look at your court papers. They will list the plaintiffs and defendants.
 yesno: users.there_is_another
 ---
 id: additional user name
@@ -230,7 +240,7 @@ id: court division
 question: |
   What division is your court case in?
 subquestion: |
-  The court division is usually listed near the top of your court papers.
+  The court division is usually listed at the top of your court papers.
 fields:
   - Division: court_division
     input type: radio
@@ -253,7 +263,7 @@ id: court county
 question: |
   What county is your court case in?
 subquestion: |
-  Choose the county where your court case is filed.
+  Choose the county where your court case is filed or will be filed.
 fields:
   - County: user_selected_county
     code: |
@@ -306,9 +316,9 @@ question: |
 subquestion: |
   If you have papers from the court, find the case number. It's usually in the upper-right corner.
 
-  It will look like one of these examples: 25-DM-00000 or 1234-00-00 Cndm.
+  It will look like one of these examples: 26-DM-00000 or 1234-00-00 Cndm.
   
-  You can leave this blank if you do not know your case number.
+  Leave this blank if you do not know your case number or don't have a case number yet.
 fields:
   - Case number: docket_number
     required: False
@@ -661,9 +671,9 @@ continue button field: saw_signature_choice
 id: download screen
 event: certificate_of_service_download
 question: |
-  ${ download_screen_instructions_headline }
+  ${ download_screen_instructions_headline_one_form }
 subquestion: |
-  ${ download_screen_instructions }
+  ${ download_screen_instructions_one_form }
 
   ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
 
