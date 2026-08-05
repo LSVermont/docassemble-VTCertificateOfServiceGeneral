@@ -30,7 +30,6 @@ sections:
   - get_docs: Get your document
 ---
 code: |
-  users1_role = "role_" + user_role
   user_ask_role = user_role
   if user_role == "plaintiff":
     other_parties_role = "defendant"
@@ -44,16 +43,8 @@ depends on:
   - users.gathered
   - other_parties.gathered
 code: |
-  users_names = [str(person) for person in users]
-  other_parties_names = [str(person) for person in other_parties]
-  users_caption = users_names[0] if len(users_names) == 1 else ", ".join(users_names[:-1]) + " and " + users_names[-1]
-  other_parties_caption = other_parties_names[0] if len(other_parties_names) == 1 else ", ".join(other_parties_names[:-1]) + " and " + other_parties_names[-1]
-  if user_role == "plaintiff":
-    certificate_caption_plaintiff = users_caption
-    certificate_caption_defendant = other_parties_caption
-  else:
-    certificate_caption_plaintiff = other_parties_caption
-    certificate_caption_defendant = users_caption
+    certificate_caption_plaintiff = comma_and_list(users) if user_role == "plaintiff" else comma_and_list(other_parties)
+    certificate_caption_defendant = comma_and_list(users) if user_role == "defendant" else comma_and_list(other_parties)
 ---
 mandatory: True
 code: |
@@ -62,7 +53,6 @@ code: |
   important_notes_to_user
 
   nav.set_section("about_you")
-  users[0].complete
   user_role
   users.gather()
   nav.set_section("other_party")
@@ -110,9 +100,9 @@ subquestion: |
   ${ intro_vtcourtforms_3_steps }
 
   <i class="fas fa-file-text fa-2x"></i> This tool helps you fill out a Certificate of Service form for the court. It is used to show the court that you have sent court papers and other documents to the other party or parties in your court case.
-  
+
   <i class="fas fa-clock fa-2x"></i> It may take you 15 minutes to complete this.
-  
+
   <i class="fas fa-circle-info fa-2x"></i> It is free to use this program. This site is not a lawyer.
 
   ${ intro_vtcourtforms_created_by }
@@ -123,7 +113,7 @@ question: |
   Important
 subquestion: |  
   "Serving" papers means sending or delivering a copy of the papers you file with the court to the other party or parties in the case.
-  
+
   Be sure to find out what kind of "service" is required for your kind of court case. See the [VTLawHelp.org](https://vtlawhelp.org) or [Vermont Judiciary](https://www.vtcourts.gov/) website for more information. For example, follow this link for [information on how to serve documents in Family Division cases.](https://www.vtcourts.gov/family/divorce/serving-papers)
 
   For this tool, you will need the mailing address, physical address or email address of the other party/parties. Usually you need to send a copy of your documents to each person or business listed on your court papers -- or to the lawyer representing them.
@@ -133,7 +123,7 @@ subquestion: |
   ${ intro_how_to_edit_answers }
 
   <h4>Our terms of use</h4>
-  
+
 fields:
   - To continue, please accept our [terms of use](https://vtlawhelp.org/vtcourtforms/terms-of-use).: acknowledged_information_use
     datatype: checkboxes
@@ -148,17 +138,23 @@ continue button field: important_notes_to_user
 ---
 id: your name
 sets:
-  - users[0].name.first
-  - users[0].name.last
+  - users[i].name.first
+  - users[i].name.middle
+  - users[i].name.last
+  - users[i].name.suffix
 question: |
+  % if i == 0:
   What is your name?
+  % else:
+  What is the name of the ${ ordinal(i) } ${ user_role }?
+  % endif
+subquestion: |
+  % if i > 0:
+  Enter the name as it appears on the court papers.
+  % endif
 fields:
-  - First name: users[0].name.first
-  - Middle name: users[0].name.middle
-    required: False
-  - Last name: users[0].name.last
-  - Suffix: users[0].name.suffix
-    required: False
+  - code: |
+      users[i].name_fields()
 ---
 id: your role
 question: |
@@ -177,60 +173,38 @@ subquestion: |
   Tip: Look at your court papers. They will list the plaintiffs and defendants.
 yesno: users.there_is_another
 ---
-id: additional user name
-sets:
-  - users[i].name.first
-question: |
-  What is the name of the ${ ordinal(i) } ${ user_role }?
-fields:
-  - First name or business name: users[i].name.first
-  - Middle name: users[i].name.middle
-    required: False
-  - Last name: users[i].name.last
-    required: False
-  - Suffix: users[i].name.suffix
-    required: False
----
 code: |
   users[i].name.first
   users[i].complete = True
 ---
 id: other party name
 sets:
-  - other_parties[0].name.first
+  - other_parties[i].name.first
+  - other_parties[i].name.middle
+  - other_parties[i].name.last
+  - other_parties[i].name.suffix
 question: |
+  % if i == 0:
   What is the ${ other_parties_role }'s name?
+  % else:
+  What is the name of the ${ ordinal(i) } ${ other_parties_role }?
+  % endif
 subquestion: |
-  Enter the name as it appears on court papers.
-  
-  If there is more than one plaintiff, we'll collect their names one at a time. Enter the first name that is listed on the court papers.
+  Enter the name as it appears on the court papers.
+
+  A ${ other_parties_role } may be a person, business, or organization.
+
+  % if i == 0:
+  If there is more than one ${ other_parties_role }, we'll collect their names one at a time. Enter the first name listed on the court papers.
+  % endif
 fields:
-  - First name or business name: other_parties[0].name.first
-  - Middle name: other_parties[0].name.middle
-    required: False
-  - Last name: other_parties[0].name.last
-    required: False
-  - Suffix: other_parties[0].name.suffix
-    required: False
+  - code: |
+      other_parties[i].name_fields(person_or_business='unsure')
 ---
 id: any other other parties
 question: |
   Are there any other ${ other_parties_role_plural } named in the case?
 yesno: other_parties.there_is_another
----
-id: additional other party name
-sets:
-  - other_parties[i].name.first
-question: |
-  What is the name of the ${ ordinal(i) } ${ other_parties_role }?
-fields:
-  - First name or business name: other_parties[i].name.first
-  - Middle name: other_parties[i].name.middle
-    required: False
-  - Last name: other_parties[i].name.last
-    required: False
-  - Suffix: other_parties[i].name.suffix
-    required: False
 ---
 code: |
   other_parties[i].name.first
@@ -317,7 +291,7 @@ subquestion: |
   If you have papers from the court, find the case number. It's usually in the upper-right corner.
 
   It will look like one of these examples: 26-DM-00000 or 1234-00-00 Cndm.
-  
+
   Leave this blank if you do not know your case number or don't have a case number yet.
 fields:
   - Case number: docket_number
@@ -384,7 +358,7 @@ question: |
   Did you serve another document that was not listed?
 subquestion: |
   You told us about these "other" documents:
-  
+
   % for other_document in other_documents_served:
     - ${ other_document.name }
   % endfor
@@ -406,7 +380,7 @@ question: |
   Who did you serve?
 subquestion: |
   Usually you need to send a copy of your documents to each person or business listed on your court papers -- or to the lawyer representing them.
-  
+
   If you sent or delivered documents to more than one person, we'll collect that information one at a time.
 fields:
   - Name of person, lawyer or business you sent the documents to: service_recipients[i].selected_name
@@ -615,9 +589,9 @@ subquestion: |
   Here is a preview of the form you will sign on the next screen.
 
   ${ al_court_bundle.as_pdf(key='preview') }
-  
+
   Click the image to view it in a new tab. **Remember to come back to this screen to edit the form and/or finish the form.**
-  
+
   Click the "Edit your answers" button to make changes.
 
   ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
@@ -643,7 +617,7 @@ fields:
       ${ today() }
   -  note: |
        You can change this date later if you want.
-       
+
        **Tap Next to choose how to sign your documents.**
 ---
 id: signature choice
@@ -680,20 +654,20 @@ subquestion: |
   ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
 
   <hr>
-  
+
   <h4 style="margin-bottom: 18px;">Documents to download</h4>
   <i class="fa fa-exclamation-circle fa-2x"></i>   Download **all** of these documents.
-  
+
   You will need to file or deliver your Certificate of Service form to the court. Keep a copy for your records.
-  
+
   ${ al_user_bundle.download_list_html() }
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
   <hr>  
-  
+
   ${ download_screen_bottom_instructions }
-  
+
   ${ collapse_template(not_seeing_email) }
   ${ collapse_template(log_out_when_done) }
   ${ thumbs_up_thumbs_down_review }
@@ -722,7 +696,7 @@ code: |
   certificate_of_service_attachment.overflow_fields['document_served_list'].overflow_trigger = 6
 
   certificate_of_service_attachment.overflow_fields['service_recipients'].overflow_trigger = 3
-  
+
   certificate_of_service_attachment.overflow_fields.gathered = True
 ---
 attachment:
@@ -736,8 +710,8 @@ attachment:
     - cos_trial_court_county: ${ user_selected_county if division_requires_county else "" }
     - cos_trial_court_division: ${ certificate_court_division.upper() }
     - cos_docket_number: ${ docket_number }
-    - cos_plaintiff: ${ certificate_caption_plaintiff }
-    - cos_defendant: ${ certificate_caption_defendant }
+    - cos_plaintiff: ${ comma_and_list(users) if user_role == "plaintiff" else comma_and_list(other_parties) }
+    - cos_defendant: ${ comma_and_list(users) if user_role == "defendant" else comma_and_list(other_parties) }
     - document_served1: ${ document_served_list[0] if len(document_served_list) > 0 else "" }
     - document_served2: ${ document_served_list[1] if len(document_served_list) > 1 else "" }
     - document_served3: ${ document_served_list[2] if len(document_served_list) > 2 else "" }
