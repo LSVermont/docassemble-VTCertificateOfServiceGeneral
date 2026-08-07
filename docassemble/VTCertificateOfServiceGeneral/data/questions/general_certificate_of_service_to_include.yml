@@ -46,6 +46,8 @@ code: |
     certificate_caption_plaintiff = comma_and_list(users) if user_role == "plaintiff" else comma_and_list(other_parties)
     certificate_caption_defendant = comma_and_list(users) if user_role == "defendant" else comma_and_list(other_parties)
 ---
+##################### INTERVIEW ORDER #####################
+---
 mandatory: True
 code: |
   nav.set_section("intro")
@@ -91,6 +93,7 @@ code: |
   certificate_caption_plaintiff
   certificate_caption_defendant
   certificate_court_division
+  trial_court.address.county
   certificate_of_service_download
 ---
 event: intro_screen
@@ -679,7 +682,7 @@ attachment code: al_user_bundle
 ---
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[
-      certificate_of_service_attachment],
+      certificate_of_service_attachment, certificate_of_service_post_interview_instructions],
       filename="certificate_of_service", title="Download all forms", enabled=True)
   - al_court_bundle: ALDocumentBundle.using(elements=[
       certificate_of_service_attachment],
@@ -687,6 +690,7 @@ objects:
 ---
 objects:
   - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service.pdf", enabled=True, has_addendum=True)
+  - certificate_of_service_post_interview_instructions: ALDocument.using(title="NEXT STEPS - Instructions for filing this form with the court", filename="general_certificate_of_service_next_steps.docx", enabled=True, has_addendum=False)
 ---
 attachment:
   variable name: certificate_of_service_attachment.addendum
@@ -748,4 +752,23 @@ attachment:
     - cos_signature_date: ${ signature_date }
     - COS_signature: ${ users[0].signature }
     - cos_signer_name: ${ printed_signature }
+---
+attachment:
+  name: Post-interview-Instructions
+  filename: general_certificate_of_service_next_steps
+  docx template file: general_certificate_of_service_next_steps.docx
+  variable name: certificate_of_service_post_interview_instructions[i]
+  skip undefined: True
+  fields:
+      - "address_county": ${ trial_court.address.county }
+      - "division": ${ trial_court.division }
+      - "name": ${ trial_court }
+      - "address_address": ${ trial_court.address.address }
+      - "address_unit": ${ trial_court.address.unit }
+      - "address_city": ${ trial_court.address.city }
+      - "address_state": ${ trial_court.address.state }
+      - "address_zip": ${ trial_court.address.zip }
+      - "arbitrary_attribute": ${ trial_court.arbitrary_attribute }
+      - "phone": ${ trial_court.phone }
+      - "email": ${ trial_court.email }
 ---
