@@ -94,7 +94,6 @@ code: |
   store_variables_snapshot(
       persistent=True,
       data={
-          "zip": showifdef("users[0].address.zip"),
           "division_where_filing": showifdef("trial_court.division"),  
           "county_where_filing": showifdef("trial_court.address.county"),          
           "reached_interview_end": True,
