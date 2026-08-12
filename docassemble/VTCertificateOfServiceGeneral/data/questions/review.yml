@@ -1,0 +1,177 @@
+#---
+#event: intro
+#code: review_form
+#---
+#event: about_you
+#code: review_form
+#---
+#event: other_party
+#code: review_form
+#---
+#event: case
+#code: review_form
+#---
+#event: documents
+#code: review_form
+#---
+#event: service
+#code: review_form
+#---
+#event: review_certificate
+#code: review_form
+#---
+#event: sign
+#code: review_form
+#---
+#event: get_docs
+#code: review_form
+---
+id: review screen
+event: review_certificate
+question: Review your answers
+review:
+- Edit: user_role
+  button: |
+    **Your role in this case:**
+
+    - ${ showifdef('user_role') }
+- Edit: users.revisit
+  button: |-
+    **Names of you and any other ${ showifdef('user_role') }s**:
+
+    % for item in users:
+    - ${ item }
+    % endfor
+- Edit: other_parties.revisit
+  button: |-
+    **Names of the other party/parties**:
+
+    % for item in other_parties:
+    - ${ item }
+    % endfor
+- Edit: service_recipients.revisit
+  button: |-
+    **You served documents to:**
+
+    % for item in service_recipients:
+    - ${ item.name } by 
+    % if item.first_class_mail:
+    first class mail
+    % endif
+    % endfor
+
+- Edit: documents_served
+  button: |
+    **You served these documents:**
+
+    - ${ documents_served.true_values() }
+ 
+- Edit: other_documents_served.revisit
+  button: |
+    % if len(other_documents_served) > 0:
+    **You also included:**
+
+    % for item in other_documents_served:
+    - ${ item }
+    % endfor
+    % endif
+
+- Edit: court_division
+  button: |
+    **You are filing in this court division:**
+
+    - ${ showifdef('court_division') }
+- Edit: court_division
+  button: |
+    % if division_requires_county:
+    **You are filing in this county:**
+
+    - ${ showifdef('user_selected_county') }
+    % endif
+- Edit: docket_number
+  button: |
+    **The case number is:**
+
+    - ${ showifdef('docket_number') }
+- Edit: printed_signature
+  button: |
+    **Date of your signature on this form:**
+
+    ${ showifdef('signature_date') }
+---
+id: revisit users
+continue button field: users.revisit
+question: Edit names of ${ showifdef('user_role') }s**
+subquestion: |-
+  ${users.table}
+
+  ${users.add_action()}
+---
+id: revisit other_parties
+continue button field: other_parties.revisit
+question: Edit name(s) of the other party/parties
+subquestion: |-
+  ${other_parties.table}
+
+  ${other_parties.add_action()}
+---
+id: revisit service_recipients
+continue button field: service_recipients.revisit
+question: Edit who you served documents to
+subquestion: |-
+  ${service_recipients.table}
+
+  ${service_recipients.add_action()}
+---
+id: revisit other_documents_served
+continue button field: other_documents_served.revisit
+question: Edit choices of other documents served
+subquestion: |-
+  ${other_documents_served.table}
+
+  ${other_documents_served.add_action()}
+---
+table: service_recipients.table
+rows: service_recipients
+columns:
+- "Name": row_item.name if hasattr(row_item, 'name') else ''
+- "By first class mail": row_item.first_class_mail if hasattr(row_item, 
+    'first_class_mail') else ''
+- "By certified mail": row_item.certified_mail if hasattr(row_item, 
+    'certified_mail') else ''
+- "By hand delivery": row_item.personal_delivery if hasattr(row_item, 
+    'personal_delivery') else ''
+- "By email": row_item.by_email if hasattr(row_item, 'by_email') else ''
+- "Another way?": row_item.other_delivery if hasattr(row_item, 'other_delivery') 
+    else ''
+- "The other way you served them": row_item.describe_other_delivery if 
+    hasattr(row_item, 'describe_other_delivery') else ''
+- "Mailing address used": row_item.mailing_service_address 
+    if hasattr(row_item, 'mailing_service_address') else ''
+- "Physical address used": row_item.physical_service_address
+    if hasattr(row_item, 'physical_service_address') else ''
+- "Email address used": row_item.service_email if hasattr(row_item, 
+    'service_email') else ''
+- "Other address used, if any": 
+    row_item.other_service_address if hasattr(row_item, 'other_service_address')
+    else ''
+edit:
+- new_name
+- first_class_mail
+- personal_delivery
+- by_email
+- certified_mail
+- other_delivery
+- describe_other_delivery
+- mailing_service_address
+- physical_service_address
+- other_service_address
+- service_email
+---
+table: other_documents_served.table
+rows: other_documents_served
+columns:
+- "Other document": row_item.name if hasattr(row_item, 'name') else ''
+edit:
+- name
+---

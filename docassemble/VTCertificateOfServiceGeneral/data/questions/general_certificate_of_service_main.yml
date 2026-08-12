@@ -2,6 +2,7 @@
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.VTSharedYMLFile:VTSharedYMLFile.yml
+  - review.yml
 ---
 metadata:
   title: Certificate of Service - General
@@ -81,7 +82,6 @@ code: |
   certificate_caption_defendant
   certificate_court_division
   certificate_preview_question
-  ### add review screen ###
 
   nav.set_section("sign")
   al_form_requires_digital_signature = False
