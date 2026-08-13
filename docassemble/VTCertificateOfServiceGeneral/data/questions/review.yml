@@ -60,7 +60,10 @@ review:
     % endif
     % endfor
 
-- Edit: documents_served
+- Edit:
+  - documents_served
+  - recompute:
+    - document_served_list
   button: |
     **You served these documents:**
     
@@ -70,7 +73,10 @@ review:
     % endif
     % endfor
  
-- Edit: other_documents_served.revisit
+- Edit:
+  - other_documents_served.revisit
+  - recompute:
+    - document_served_list
   button: |
     % if len(other_documents_served) > 0:
     **You also served:**
@@ -80,12 +86,17 @@ review:
     % endfor
     % endif
 
-- Edit: court_division
+- Edit:
+  - court_division
+  - invalidate:
+    - user_selected_county
+  - recompute:
+    - division_requires_county
   button: |
     **You are filing in this court division:**
 
     - ${ showifdef('court_division') }
-- Edit: court_division
+- Edit: user_selected_county
   button: |
     % if division_requires_county:
     **You are filing in this county:**
