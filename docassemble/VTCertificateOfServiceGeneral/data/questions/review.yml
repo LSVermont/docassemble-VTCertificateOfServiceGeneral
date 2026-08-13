@@ -1,7 +1,11 @@
 ---
 id: review screen
 event: review_certificate
-question: Review your answers
+
+question: |
+  Review your answers
+subquestion: |
+  ${ review_screen_instructions }
 review:
 - Edit: user_role
   button: |
