@@ -63,13 +63,17 @@ review:
 - Edit: documents_served
   button: |
     **You served these documents:**
-
-    - ${ documents_served.true_values() }
+    
+    % for item in documents_served.true_values():
+    % if item != "Other":
+    - ${ item }
+    % endif
+    % endfor
  
 - Edit: other_documents_served.revisit
   button: |
     % if len(other_documents_served) > 0:
-    **You also included:**
+    **You also served:**
 
     % for item in other_documents_served:
     - ${ item }
