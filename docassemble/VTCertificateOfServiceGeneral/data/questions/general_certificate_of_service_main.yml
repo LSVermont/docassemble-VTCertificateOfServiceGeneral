@@ -206,9 +206,7 @@ question: |
   What is the name of the ${ ordinal(i) } ${ other_parties_role }?
   % endif
 subquestion: |
-  Enter the name as it appears on the court papers.
-
-  A ${ other_parties_role } may be a person, business, or organization.
+  A ${ other_parties_role } may be a person, business or organization. Enter the name as it appears on the court papers.
 
   % if i == 0:
   If there is more than one ${ other_parties_role }, we'll collect their names one at a time. Enter the first name listed on the court papers.

@@ -59,23 +59,19 @@ review:
     **You served these documents:**
     
     % for item in documents_served.true_values():
-    % if item != "Other":
     - ${ item }
-    % endif
     % endfor
- 
+
 - Edit:
   - other_documents_served.revisit
   - recompute:
     - document_served_list
   button: |
-    % if len(other_documents_served) > 0:
-    **You also served:**
+    **The other document(s) were:**
 
     % for item in other_documents_served:
     - ${ item }
     % endfor
-    % endif
 
 - Edit:
   - court_division
@@ -116,6 +112,8 @@ subquestion: |-
   ${users.table}
 
   ${users.add_action()}
+
+
 ---
 id: revisit other_parties
 continue button field: other_parties.revisit
@@ -135,7 +133,7 @@ subquestion: |-
 ---
 id: revisit other_documents_served
 continue button field: other_documents_served.revisit
-question: Edit choices of other documents served
+question: Edit other documents served
 subquestion: |-
   ${other_documents_served.table}
 
@@ -183,4 +181,5 @@ columns:
 - "Other document": row_item.name if hasattr(row_item, 'name') else ''
 edit:
 - name
+delete buttons: True
 ---
