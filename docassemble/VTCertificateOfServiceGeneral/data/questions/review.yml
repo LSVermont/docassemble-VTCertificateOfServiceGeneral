@@ -1,30 +1,3 @@
-#---
-#event: intro
-#code: review_form
-#---
-#event: about_you
-#code: review_form
-#---
-#event: other_party
-#code: review_form
-#---
-#event: case
-#code: review_form
-#---
-#event: documents
-#code: review_form
-#---
-#event: service
-#code: review_form
-#---
-#event: review_certificate
-#code: review_form
-#---
-#event: sign
-#code: review_form
-#---
-#event: get_docs
-#code: review_form
 ---
 id: review screen
 event: review_certificate
@@ -54,10 +27,28 @@ review:
     **You served documents to:**
 
     % for item in service_recipients:
-    - ${ item.name } by 
-    % if item.first_class_mail:
-    first class mail
+    **${ item.name }** by:
+    
+    % if item.first_class_mail == True:
+    - first class mail
     % endif
+    
+    % if item.certified_mail == True:
+    - certified mail
+    % endif
+    
+    % if item.personal_delivery == True:
+    -  hand delivered
+    % endif
+
+    % if item.by_email == True:
+    -  email
+    % endif
+
+    % if item.other_delivery == True:
+    -  ${ item.describe_other_delivery }
+    % endif
+    
     % endfor
 
 - Edit:
@@ -107,7 +98,11 @@ review:
   button: |
     **The case number is:**
 
+    % if docket_number != '':
     - ${ showifdef('docket_number') }
+    % else:
+    - Unknown
+    % endif
 - Edit: printed_signature
   button: |
     **Date of your signature on this form:**
@@ -159,7 +154,7 @@ columns:
 - "By email": row_item.by_email if hasattr(row_item, 'by_email') else ''
 - "Another way?": row_item.other_delivery if hasattr(row_item, 'other_delivery') 
     else ''
-- "The other way you served them": row_item.describe_other_delivery if 
+- "": row_item.describe_other_delivery if 
     hasattr(row_item, 'describe_other_delivery') else ''
 - "Mailing address used": row_item.mailing_service_address 
     if hasattr(row_item, 'mailing_service_address') else ''
@@ -171,7 +166,6 @@ columns:
     row_item.other_service_address if hasattr(row_item, 'other_service_address')
     else ''
 edit:
-- new_name
 - first_class_mail
 - personal_delivery
 - by_email
