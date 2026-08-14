@@ -2,6 +2,7 @@
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.VTSharedYMLFile:VTSharedYMLFile.yml
+  - review.yml
 ---
 metadata:
   title: Certificate of Service - General
@@ -81,7 +82,6 @@ code: |
   certificate_caption_defendant
   certificate_court_division
   certificate_preview_question
-  ### add review screen ###
 
   nav.set_section("sign")
   al_form_requires_digital_signature = False
@@ -94,7 +94,6 @@ code: |
   store_variables_snapshot(
       persistent=True,
       data={
-          "zip": showifdef("users[0].address.zip"),
           "division_where_filing": showifdef("trial_court.division"),  
           "county_where_filing": showifdef("trial_court.address.county"),          
           "reached_interview_end": True,
@@ -118,7 +117,7 @@ subquestion: |
 
   <i class="fas fa-file-text fa-2x"></i> This tool helps you fill out a Certificate of Service form for the court. It is used to show the court that you have sent court papers and other documents to the other party or parties in your court case.
 
-  <i class="fas fa-clock fa-2x"></i> It may take you 15 minutes to complete this.
+  <i class="fas fa-clock fa-2x"></i> It may take you 10 minutes to complete this.
 
   <i class="fas fa-circle-info fa-2x"></i> It is free to use this program. This site is not a lawyer.
 
@@ -133,7 +132,7 @@ subquestion: |
 
   Be sure to find out what kind of "service" is required for your kind of court case. See the [VTLawHelp.org](https://vtlawhelp.org) or [Vermont Judiciary](https://www.vtcourts.gov/) website for more information. For example, follow this link for [information on how to serve documents in Family Division cases.](https://www.vtcourts.gov/family/divorce/serving-papers)
 
-  For this tool, you will need the mailing address, physical address or email address of the other party/parties. Usually you need to send a copy of your documents to each person or business listed on your court papers -- or to the lawyer representing them.
+  For this tool, you will need the mailing address, physical address or email address of the other party/parties. Usually you need to send a copy of your documents to each person or business listed on your court papers — or to the lawyer representing them.
 
   <h4>About this tool</h4>
 
@@ -207,9 +206,7 @@ question: |
   What is the name of the ${ ordinal(i) } ${ other_parties_role }?
   % endif
 subquestion: |
-  Enter the name as it appears on the court papers.
-
-  A ${ other_parties_role } may be a person, business, or organization.
+  A ${ other_parties_role } may be a person, business or organization. Enter the name as it appears on the court papers.
 
   % if i == 0:
   If there is more than one ${ other_parties_role }, we'll collect their names one at a time. Enter the first name listed on the court papers.
@@ -396,7 +393,7 @@ id: service recipient details
 question: |
   Who did you serve?
 subquestion: |
-  Usually you need to send a copy of your documents to each person or business listed on your court papers -- or to the lawyer representing them.
+  Usually you need to send a copy of your documents to each person or business listed on your court papers — or to the lawyer representing them.
 
   If you sent or delivered documents to more than one person, we'll collect that information one at a time.
 fields:
