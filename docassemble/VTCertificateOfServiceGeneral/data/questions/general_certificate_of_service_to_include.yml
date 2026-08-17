@@ -45,6 +45,24 @@ code: |
   certificate_caption_plaintiff
   certificate_caption_defendant
   certificate_court_division
+  certificate_preview_question
+
+  # Store anonymous data for analytics / statistics
+  store_variables_snapshot(
+      persistent=True,
+      data={
+          "division_where_filing": showifdef("trial_court.division"),  
+          "county_where_filing": showifdef("trial_court.address.county"),          
+          "reached_interview_end": True,
+          "number_of_forms": len(al_user_bundle.enabled_documents()),
+          "1st_OP_is_person_or_business": showifdef("other_parties[0].person_type"),
+      },
+  )
+  
+  certificate_caption_plaintiff
+  certificate_caption_defendant
+  certificate_court_division
+  trial_court.address.county
 
   interview_order_general_certificate_of_service = True
 ---
@@ -56,7 +74,7 @@ subquestion: |
 
   <i class="fas fa-file-text fa-2x"></i> This tool helps you fill out a Certificate of Service form for the court. It is used to show the court that you have sent court papers and other documents to the other party or parties in your court case.
 
-  <i class="fas fa-clock fa-2x"></i> It may take you 15 minutes to complete this.
+  <i class="fas fa-clock fa-2x"></i> It may take you 10 minutes to complete this.
 
   <i class="fas fa-circle-info fa-2x"></i> It is free to use this program. This site is not a lawyer.
 
@@ -93,17 +111,23 @@ continue button field: important_notes_to_user
 ---
 id: your name
 sets:
-  - users[0].name.first
-  - users[0].name.last
+  - users[i].name.first
+  - users[i].name.middle
+  - users[i].name.last
+  - users[i].name.suffix
 question: |
+  % if i == 0:
   What is your name?
+  % else:
+  What is the name of the ${ ordinal(i) } ${ user_role }?
+  % endif
+subquestion: |
+  % if i > 0:
+  Enter the name as it appears on the court papers.
+  % endif
 fields:
-  - First name: users[0].name.first
-  - Middle name: users[0].name.middle
-    required: False
-  - Last name: users[0].name.last
-  - Suffix: users[0].name.suffix
-    required: False
+  - code: |
+      users[i].name_fields()
 ---
 id: your role
 question: |
@@ -122,20 +146,6 @@ subquestion: |
   Tip: Look at your court papers. They will list the plaintiffs and defendants.
 yesno: users.there_is_another
 ---
-id: additional user name
-sets:
-  - users[i].name.first
-question: |
-  What is the name of the ${ ordinal(i) } ${ user_role }?
-fields:
-  - First name or business name: users[i].name.first
-  - Middle name: users[i].name.middle
-    required: False
-  - Last name: users[i].name.last
-    required: False
-  - Suffix: users[i].name.suffix
-    required: False
----
 code: |
   users[i].name.first
   users[i].complete = True
@@ -153,9 +163,7 @@ question: |
   What is the name of the ${ ordinal(i) } ${ other_parties_role }?
   % endif
 subquestion: |
-  Enter the name as it appears on the court papers.
-
-  A ${ other_parties_role } may be a person, business, or organization.
+  A ${ other_parties_role } may be a person, business or organization. Enter the name as it appears on the court papers.
 
   % if i == 0:
   If there is more than one ${ other_parties_role }, we'll collect their names one at a time. Enter the first name listed on the court papers.
@@ -553,6 +561,19 @@ id: any other service recipients
 question: |
   Did you serve anyone else?
 yesno: service_recipients.there_is_another
+---
+id: certificate preview
+question: |
+  Preview your Certificate of Service
+subquestion: |
+  Here is a preview of your Certificate of Service.
+
+  ${ certificate_of_service_attachment.as_pdf(key='preview') }
+
+  Click the image to view it in a new tab. Remember to come back to this screen when you are finished reviewing it.
+
+  **Tap Next to continue.**
+continue button field: certificate_preview_question
 ---
 ##################### ATTACHMENTS #####################
 ---
