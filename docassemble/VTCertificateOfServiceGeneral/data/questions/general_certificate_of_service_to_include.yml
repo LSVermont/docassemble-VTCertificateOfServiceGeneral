@@ -1,4 +1,17 @@
 ---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.VTSharedYMLFile:VTSharedYMLFile.yml
+  - review.yml
+---
+metadata:
+  title: Certificate of Service - General
+  short title: Certificate of Service - General
+  description: >-
+    Fill out a Certificate of Service form in Vermont. Based on paper version of Vermont Judiciary Form 600-00264 (1/2026).
+  original_form:
+    - https://www.vermontjudiciary.org/media/11
+---
 objects:
   - service_recipients: DAList.using(object_type=DAObject, minimum_number=1, complete_attribute='complete')
   - other_documents_served: DAList.using(object_type=DAObject, ask_number=False, minimum_number=1, complete_attribute='complete')
@@ -20,6 +33,7 @@ code: |
     certificate_caption_plaintiff = comma_and_list(users) if user_role == "plaintiff" else comma_and_list(other_parties)
     certificate_caption_defendant = comma_and_list(users) if user_role == "defendant" else comma_and_list(other_parties)
 ---
+##################### INTERVIEW ORDER #####################
 id: interview order general certificate of service
 code: |
   users[0].complete
