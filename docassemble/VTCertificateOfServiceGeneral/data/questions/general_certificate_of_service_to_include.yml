@@ -1,34 +1,7 @@
 ---
-include:
-  - docassemble.AssemblyLine:assembly_line.yml
-  - docassemble.VTSharedYMLFile:VTSharedYMLFile.yml
-  - review.yml
----
-metadata:
-  title: Certificate of Service - General
-  short title: Certificate of Service - General
-  description: >-
-    Fill out a Certificate of Service form in Vermont. Based on paper version of Vermont Judiciary Form 600-00264 (1/2026).
-  original_form:
-    - https://www.vermontjudiciary.org/media/11
----
 objects:
-  - all_courts: ALCourtLoader.using(file_name='docassemble.VTSharedYMLFile:data/sources/courts_list_full.xlsx')
-  - users: ALPeopleList.using(ask_number=False, minimum_number=1, complete_attribute='complete')
-  - other_parties: ALPeopleList.using(ask_number=False, minimum_number=1, complete_attribute='complete')
   - service_recipients: DAList.using(object_type=DAObject, minimum_number=1, complete_attribute='complete')
   - other_documents_served: DAList.using(object_type=DAObject, ask_number=False, minimum_number=1, complete_attribute='complete')
----
-sections:
-  - intro: Introduction
-  - about_you: About you
-  - other_party: The other party
-  - case: Court case
-  - documents: Documents served
-  - service: Service details
-  - review_certificate: <i class="fa-solid fa-pencil"></i> <u>Edit your answers</u>
-  - sign: Sign your document
-  - get_docs: Get your document
 ---
 code: |
   user_ask_role = user_role
@@ -47,67 +20,33 @@ code: |
     certificate_caption_plaintiff = comma_and_list(users) if user_role == "plaintiff" else comma_and_list(other_parties)
     certificate_caption_defendant = comma_and_list(users) if user_role == "defendant" else comma_and_list(other_parties)
 ---
-##################### INTERVIEW ORDER #####################
----
-mandatory: True
+id: interview order general certificate of service
 code: |
-  nav.set_section("intro")
-  intro_screen
-  important_notes_to_user
-
-  nav.set_section("about_you")
+  users[0].complete
   user_role
   users.gather()
-  nav.set_section("other_party")
   other_parties.gather()
 
-  nav.set_section("case")
   court_division
   if division_requires_county:
     user_selected_county
   trial_court_index
   docket_number
 
-  nav.set_section("documents")
   documents_served
   if documents_served['Other']:
     other_documents_served.gather()
+  else:
+    other_documents_served.there_are_any = False
   document_served_list
 
-  nav.set_section("service")
   service_recipients.gather()
 
-  nav.set_section("review_certificate")
   certificate_caption_plaintiff
   certificate_caption_defendant
   certificate_court_division
-  certificate_preview_question
 
-  nav.set_section("sign")
-  al_form_requires_digital_signature = False
-  signature_date
-  signature_choice
-  basic_questions_signature_flow
-
-
-  # Store anonymous data for analytics / statistics
-  store_variables_snapshot(
-      persistent=True,
-      data={
-          "division_where_filing": showifdef("trial_court.division"),  
-          "county_where_filing": showifdef("trial_court.address.county"),          
-          "reached_interview_end": True,
-          "number_of_forms": len(al_user_bundle.enabled_documents()),
-          "1st_OP_is_person_or_business": showifdef("other_parties[0].person_type"),
-      },
-  )
-  
-  nav.set_section("get_docs")
-  certificate_caption_plaintiff
-  certificate_caption_defendant
-  certificate_court_division
-  trial_court.address.county
-  certificate_of_service_download
+  interview_order_general_certificate_of_service = True
 ---
 event: intro_screen
 question: |
@@ -117,7 +56,7 @@ subquestion: |
 
   <i class="fas fa-file-text fa-2x"></i> This tool helps you fill out a Certificate of Service form for the court. It is used to show the court that you have sent court papers and other documents to the other party or parties in your court case.
 
-  <i class="fas fa-clock fa-2x"></i> It may take you 10 minutes to complete this.
+  <i class="fas fa-clock fa-2x"></i> It may take you 15 minutes to complete this.
 
   <i class="fas fa-circle-info fa-2x"></i> It is free to use this program. This site is not a lawyer.
 
@@ -132,7 +71,7 @@ subquestion: |
 
   Be sure to find out what kind of "service" is required for your kind of court case. See the [VTLawHelp.org](https://vtlawhelp.org) or [Vermont Judiciary](https://www.vtcourts.gov/) website for more information. For example, follow this link for [information on how to serve documents in Family Division cases.](https://www.vtcourts.gov/family/divorce/serving-papers)
 
-  For this tool, you will need the mailing address, physical address or email address of the other party/parties. Usually you need to send a copy of your documents to each person or business listed on your court papers — or to the lawyer representing them.
+  For this tool, you will need the mailing address, physical address or email address of the other party/parties. Usually you need to send a copy of your documents to each person or business listed on your court papers -- or to the lawyer representing them.
 
   <h4>About this tool</h4>
 
@@ -154,23 +93,17 @@ continue button field: important_notes_to_user
 ---
 id: your name
 sets:
-  - users[i].name.first
-  - users[i].name.middle
-  - users[i].name.last
-  - users[i].name.suffix
+  - users[0].name.first
+  - users[0].name.last
 question: |
-  % if i == 0:
   What is your name?
-  % else:
-  What is the name of the ${ ordinal(i) } ${ user_role }?
-  % endif
-subquestion: |
-  % if i > 0:
-  Enter the name as it appears on the court papers.
-  % endif
 fields:
-  - code: |
-      users[i].name_fields()
+  - First name: users[0].name.first
+  - Middle name: users[0].name.middle
+    required: False
+  - Last name: users[0].name.last
+  - Suffix: users[0].name.suffix
+    required: False
 ---
 id: your role
 question: |
@@ -189,6 +122,20 @@ subquestion: |
   Tip: Look at your court papers. They will list the plaintiffs and defendants.
 yesno: users.there_is_another
 ---
+id: additional user name
+sets:
+  - users[i].name.first
+question: |
+  What is the name of the ${ ordinal(i) } ${ user_role }?
+fields:
+  - First name or business name: users[i].name.first
+  - Middle name: users[i].name.middle
+    required: False
+  - Last name: users[i].name.last
+    required: False
+  - Suffix: users[i].name.suffix
+    required: False
+---
 code: |
   users[i].name.first
   users[i].complete = True
@@ -206,7 +153,9 @@ question: |
   What is the name of the ${ ordinal(i) } ${ other_parties_role }?
   % endif
 subquestion: |
-  A ${ other_parties_role } may be a person, business or organization. Enter the name as it appears on the court papers.
+  Enter the name as it appears on the court papers.
+
+  A ${ other_parties_role } may be a person, business, or organization.
 
   % if i == 0:
   If there is more than one ${ other_parties_role }, we'll collect their names one at a time. Enter the first name listed on the court papers.
@@ -320,11 +269,20 @@ id: documents served
 question: |
   What documents did you serve?
 subquestion: |
-  Select every document that you delivered to the other party or parties. We have listed common court documents, but you can choose Other and enter the name of another kind of document.
+  Select every document that you delivered to the other party or parties.
+
+  % if defined("certificate_of_service_prechecked_documents"):
+  We preselected documents based on the forms you are creating in this interview. You can change these selections or add other documents.
+  % else:
+  We have listed common court documents, but you can choose **Other** and enter the name of another kind of document.
+  % endif
 fields:
   - no label: documents_served
     datatype: checkboxes
     none of the above: False
+    default:
+      code: |
+        certificate_of_service_prechecked_documents if defined("certificate_of_service_prechecked_documents") else []
     choices:
       - Notice of Appearance
       - Summons
@@ -393,7 +351,7 @@ id: service recipient details
 question: |
   Who did you serve?
 subquestion: |
-  Usually you need to send a copy of your documents to each person or business listed on your court papers — or to the lawyer representing them.
+  Usually you need to send a copy of your documents to each person or business listed on your court papers -- or to the lawyer representing them.
 
   If you sent or delivered documents to more than one person, we'll collect that information one at a time.
 fields:
@@ -596,112 +554,10 @@ question: |
   Did you serve anyone else?
 yesno: service_recipients.there_is_another
 ---
-id: certificate preview
-question: |
-  Preview your form before you sign it
-subquestion: |
-  Here is a preview of the form you will sign on the next screen.
-
-  ${ al_court_bundle.as_pdf(key='preview') }
-
-  Click the image to view it in a new tab. **Remember to come back to this screen to edit the form and/or finish the form.**
-
-  Click the "Edit your answers" button to make changes.
-
-  ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
-
-  **Tap Next to choose how to sign your form.**
-continue button field: certificate_preview_question
----
-code: |
-  signature_fields = ['users[0].signature']
----
-id: Signing your forms
-question: |
-  Date of your signature
-fields:
-  - "This is how your name will appear under your signature.": printed_signature
-    default: |
-      ${ users[0].name }
-    maxlength: 34
-  - "Date of your signature for these forms": signature_date
-    datatype: date
-    required: False
-    default: |
-      ${ today() }
-  -  note: |
-       You can change this date later if you want.
-
-       **Tap Next to choose how to sign your documents.**
----
-id: signature choice
-decoration: file-signature
-question: |
-  Your documents are almost ready
-subquestion: |
-  How do you want to sign them?
-fields: 
-  - I will sign: signature_choice
-    input type: radio
-    choices:
-      - On my computer or phone: this_device
-    show if:
-      code: |
-        al_form_requires_digital_signature
-  - I will sign: signature_choice
-    input type: radio
-    choices:
-      - On my computer or phone: this_device
-      - On the paper with a pen after I print the documents: sign_after_printing
-    show if:
-      code: |
-        not al_form_requires_digital_signature
-continue button field: saw_signature_choice
----
-id: download screen
-event: certificate_of_service_download
-question: |
-  ${ download_screen_instructions_headline_one_form }
-subquestion: |
-  ${ download_screen_instructions_one_form }
-
-  ${ action_button_html(url_action('review_certificate'), label='<i class="fa-solid fa-pencil"></i> Edit your answers', color='info') }
-
-  <hr>
-
-  <h4 style="margin-bottom: 18px;">Documents to download</h4>
-  <i class="fa fa-exclamation-circle fa-2x"></i>   Download **all** of these documents.
-
-  You will need to file or deliver your Certificate of Service form to the court. Keep a copy for your records.
-
-  ${ al_user_bundle.download_list_html() }
-
-  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
-
-  <hr>  
-
-  ${ download_screen_bottom_instructions }
-
-  ${ collapse_template(not_seeing_email) }
-  ${ collapse_template(log_out_when_done) }
-  ${ thumbs_up_thumbs_down_review }
-
-progress: 100
-attachment code: al_user_bundle
----
 ##################### ATTACHMENTS #####################
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[
-      certificate_of_service_attachment, certificate_of_service_post_interview_instructions],
-      filename="certificate_of_service", title="Download all forms", enabled=True)
-  - al_court_bundle: ALDocumentBundle.using(elements=[
-      certificate_of_service_attachment],
-      filename="certificate_of_service", title="Form to file with the court", enabled=True)
----
-objects:
   - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service.pdf", enabled=True, has_addendum=True)
-  - certificate_of_service_post_interview_instructions: ALDocument.using(title="NEXT STEPS - Instructions for filing this form with the court", filename="general_certificate_of_service_next_steps.docx", enabled=True, has_addendum=False)
 ---
 attachment:
   variable name: certificate_of_service_attachment.addendum
@@ -763,23 +619,4 @@ attachment:
     - cos_signature_date: ${ signature_date }
     - COS_signature: ${ users[0].signature }
     - cos_signer_name: ${ printed_signature }
----
-attachment:
-  name: Post-interview-Instructions
-  filename: general_certificate_of_service_next_steps
-  docx template file: general_certificate_of_service_next_steps.docx
-  variable name: certificate_of_service_post_interview_instructions[i]
-  skip undefined: True
-  fields:
-      - "address_county": ${ trial_court.address.county }
-      - "division": ${ trial_court.division }
-      - "name": ${ trial_court }
-      - "address_address": ${ trial_court.address.address }
-      - "address_unit": ${ trial_court.address.unit }
-      - "address_city": ${ trial_court.address.city }
-      - "address_state": ${ trial_court.address.state }
-      - "address_zip": ${ trial_court.address.zip }
-      - "arbitrary_attribute": ${ trial_court.arbitrary_attribute }
-      - "phone": ${ trial_court.phone }
-      - "email": ${ trial_court.email }
 ---
