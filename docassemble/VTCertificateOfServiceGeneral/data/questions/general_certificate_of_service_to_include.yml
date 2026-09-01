@@ -59,7 +59,6 @@ code: |
   certificate_caption_plaintiff
   certificate_caption_defendant
   certificate_court_division
-  certificate_preview_question
 
   # Store anonymous data for analytics / statistics
   store_variables_snapshot(
@@ -289,9 +288,9 @@ code: |
 ---
 id: documents served
 question: |
-  What documents did you serve?
+  What documents will you serve?
 subquestion: |
-  Select every document that you delivered to the other party or parties.
+  Select every document that you will deliver to the other party or parties.
 
   % if defined("certificate_of_service_prechecked_documents"):
   We preselected documents based on the forms you are creating in this interview. You can change these selections or add other documents.
@@ -576,19 +575,6 @@ question: |
   Did you serve anyone else?
 yesno: service_recipients.there_is_another
 ---
-id: certificate preview
-question: |
-  Preview your Certificate of Service
-subquestion: |
-  Here is a preview of your Certificate of Service.
-
-  ${ certificate_of_service_attachment.as_pdf(key='preview') }
-
-  Click the image to view it in a new tab. Remember to come back to this screen when you are finished reviewing it.
-
-  **Tap Next to continue.**
-continue button field: certificate_preview_question
----
 ##################### ATTACHMENTS #####################
 ---
 objects:
@@ -651,7 +637,7 @@ attachment:
     - describe_other_delivery3: ${ showifdef('service_recipients[2].describe_other_delivery') if len(service_recipients) > 2 and service_recipients[2].other_delivery else '' }
     - service_address3: ${ showifdef('service_recipients[2].service_address') if len(service_recipients) > 2 else '' }
     - service_email3: ${ showifdef('service_recipients[2].service_email') if len(service_recipients) > 2 and service_recipients[2].by_email else '' }
-    - cos_signature_date: ${ signature_date }
-    - COS_signature: ${ users[0].signature }
+    - cos_signature_date: ${ "" }
+    - COS_signature: ${ "" }
     - cos_signer_name: ${ printed_signature }
 ---
