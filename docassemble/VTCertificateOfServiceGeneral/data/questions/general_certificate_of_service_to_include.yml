@@ -636,5 +636,5 @@ attachment:
     - service_email3: ${ showifdef('service_recipients[2].service_email') if len(service_recipients) > 2 and service_recipients[2].by_email else '' }
     - cos_signature_date: ${ "" }
     - COS_signature: ${ "" }
-    - cos_signer_name: ${ printed_signature }
+    - cos_signer_name: ${ users[0] }
 ---
