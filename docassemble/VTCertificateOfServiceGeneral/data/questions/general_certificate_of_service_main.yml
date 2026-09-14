@@ -53,7 +53,7 @@ mandatory: True
 code: |
   nav.set_section("intro")
   intro_screen
-  important_notes_to_user
+  cos_important_notes_to_user
 
   nav.set_section("about_you")
   user_role
@@ -124,7 +124,7 @@ subquestion: |
   ${ intro_vtcourtforms_created_by }
 continue button field: intro_screen
 ---
-id: important_notes_to_user
+id: cos_important_notes_to_user
 question: |
   Important
 subquestion: |  
@@ -150,7 +150,7 @@ fields:
     validation messages:
       minlength: |
         You cannot continue unless you agree to the terms of use.
-continue button field: important_notes_to_user
+continue button field: cos_important_notes_to_user
 ---
 id: your name
 sets:
