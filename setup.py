@@ -44,7 +44,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.VTCertificateOfServiceGeneral',
-      version='1.0',
+      version='1.1',
       description=('General Certificate of Service form 600-00264'),
       long_description='# docassemble.VTCertificateOfServiceGeneral\r\nGeneral Certificate of Service form 600-00264.\r\n\r\n## Authors\r\n- K. Surette, Legal Services Vermont\r\n- K. McGuire, Lemma Legal\r\n',
       long_description_content_type='text/markdown',

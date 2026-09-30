@@ -306,27 +306,10 @@ fields:
         certificate_of_service_prechecked_documents if defined("certificate_of_service_prechecked_documents") else []
     choices:
       - Notice of Appearance
-      - Summons
-      - Complaint
-      - Affidavit
       - Answer
       - Counterclaim
-      - Exhibits
-      - Motion to Dismiss
-      - Motion for Default Judgment
       - Disclosure of Exempt Income
       - Financial Disclosure Affidavit
-      - Motion for Financial Disclosure
-      - Financial Disclosure Order
-      - Financial Affidavit Form 813A
-      - Financial Affidavit Form 813B
-      - Notice of Hearing
-      - Notice of Appeal
-      - Notice of Action and Request for Waiver of Service of Summons
-      - Information and Instructions for the Defendant
-      - Blank Notice of Appearance form for other party
-      - Blank Answer form for other party
-      - Blank Certificate of Service form for other party
       - Other
 validation code: |
   if len(documents_served.true_values()) == 0:
