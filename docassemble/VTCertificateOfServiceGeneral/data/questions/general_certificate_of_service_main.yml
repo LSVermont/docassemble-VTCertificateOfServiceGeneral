@@ -392,22 +392,30 @@ question: |
 subquestion: |
   Usually you need to send a copy of your documents to each person or business listed on your court papers — or to the lawyer representing them.
 
+  If a person is represented by a lawyer, you should send the documents to that lawyer.
+
+  A business or organization is usually represented by a lawyer, so you should send the documents to that lawyer.
+
   If you sent or delivered documents to more than one person, we'll collect that information one at a time.
 fields:
   - Name of person, lawyer or business you sent the documents to: service_recipients[i].selected_name
     input type: radio
     code: |
-      [str(party) for party in other_parties] + ["Someone else"]
+      [str(party) for party in other_parties] + [
+        {"business_lawyer:" + str(index): str(party) + "'s lawyer"}
+        for index, party in enumerate(other_parties)
+        if party.person_type == "business"
+      ] + ["Someone else"]
   - Name: service_recipients[i].new_name
-    show if:
-      variable: service_recipients[i].selected_name
-      is: Someone else
+    js show if: |
+      val("service_recipients[i].selected_name") == "Someone else" ||
+      (val("service_recipients[i].selected_name") || "").indexOf("business_lawyer:") === 0
 ---
 depends on:
   - service_recipients[i].selected_name
   - service_recipients[i].new_name
 code: |
-  if service_recipients[i].selected_name == "Someone else":
+  if service_recipients[i].selected_name == "Someone else" or service_recipients[i].selected_name.startswith("business_lawyer:"):
     service_recipients[i].name = service_recipients[i].new_name
   else:
     service_recipients[i].name = service_recipients[i].selected_name
@@ -478,7 +486,7 @@ validation code: |
     validation_error("Explain the other way you served them.", field="service_recipients[i].describe_other_delivery")
 ---
 code: |
-  if service_recipients[i].selected_name == "Someone else":
+  if service_recipients[i].selected_name == "Someone else" or service_recipients[i].selected_name.startswith("business_lawyer:"):
     service_recipients[i].name = service_recipients[i].new_name
   else:
     service_recipients[i].name = service_recipients[i].selected_name
