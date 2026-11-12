@@ -566,7 +566,7 @@ yesno: service_recipients.there_is_another
 ##################### ATTACHMENTS #####################
 ---
 objects:
-  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service.pdf", enabled=True, has_addendum=True)
+  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service - Form 600-00264.pdf", enabled=True, has_addendum=True)
 ---
 attachment:
   variable name: certificate_of_service_attachment.addendum
@@ -625,7 +625,7 @@ attachment:
     - describe_other_delivery3: ${ showifdef('service_recipients[2].describe_other_delivery') if len(service_recipients) > 2 and service_recipients[2].other_delivery else '' }
     - service_address3: ${ showifdef('service_recipients[2].service_address') if len(service_recipients) > 2 else '' }
     - service_email3: ${ showifdef('service_recipients[2].service_email') if len(service_recipients) > 2 and service_recipients[2].by_email else '' }
-    - cos_signature_date: ${ "" }
-    - COS_signature: ${ "" }
-    - cos_signer_name: ${ printed_signature }
+    - cos_signature_date: ${ signature_date }
+    - COS_signature: ${ users[0].signature }
+    - cos_printed_signature: ${ printed_signature }
 ---
