@@ -620,24 +620,24 @@ continue button field: certificate_preview_question
 ---
 code: |
   signature_fields = ['users[0].signature']
----
-id: Signing your forms
-question: |
-  Date of your signature
-fields:
-  - "This is how your name will appear under your signature.": printed_signature
-    default: |
-      ${ users[0].name }
-    maxlength: 34
-  - "Date of your signature for these forms": signature_date
-    datatype: date
-    required: False
-    default: |
-      ${ today() }
-  -  note: |
-       You can change this date later if you want.
-
-       **Tap Next to choose how to sign your documents.**
+#---
+#id: Signing your forms
+#question: |
+#  Date of your signature
+#fields:
+#  - "This is how your name will appear under your signature.": printed_signature
+#    default: |
+#      ${ users[0].name }
+#    maxlength: 34
+#  - "Date of your signature for these forms": signature_date
+#    datatype: date
+#    required: False
+#    default: |
+#      ${ today() }
+#  -  note: |
+#       You can change this date later if you want.
+#
+#       **Tap Next to choose how to sign your documents.**
 ---
 id: signature choice
 decoration: file-signature
