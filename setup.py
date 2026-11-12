@@ -44,7 +44,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.VTCertificateOfServiceGeneral',
-      version='1.1',
+      version='1.2',
       description=('General Certificate of Service form 600-00264'),
       long_description='# docassemble.VTCertificateOfServiceGeneral\r\nGeneral Certificate of Service form 600-00264.\r\n\r\n## Authors\r\n- K. Surette, Legal Services Vermont\r\n- K. McGuire, Lemma Legal\r\n',
       long_description_content_type='text/markdown',
@@ -53,7 +53,7 @@ setup(name='docassemble.VTCertificateOfServiceGeneral',
       license='MIT',
       url='https://VTLawHelp.org',
       packages=find_namespace_packages(),
-      install_requires=[],
+      install_requires=['docassemble.AssemblyLine @ git+https://github.com/SuffolkLITLab/docassemble-AssemblyLine.git@main', 'docassemble.VTFeedback @ git+https://github.com/VTskier/docassemble-VTFeedback.git@main'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/VTCertificateOfServiceGeneral/', package='docassemble.VTCertificateOfServiceGeneral'),
      )
