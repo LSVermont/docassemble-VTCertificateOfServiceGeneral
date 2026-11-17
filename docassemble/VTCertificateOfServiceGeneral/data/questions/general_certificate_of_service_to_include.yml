@@ -583,7 +583,7 @@ yesno: service_recipients.there_is_another
 ##################### ATTACHMENTS #####################
 ---
 objects:
-  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service.pdf", enabled=True, has_addendum=True)
+  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service - Form 600-00264.pdf", enabled=True, has_addendum=True)
 ---
 attachment:
   variable name: certificate_of_service_attachment.addendum

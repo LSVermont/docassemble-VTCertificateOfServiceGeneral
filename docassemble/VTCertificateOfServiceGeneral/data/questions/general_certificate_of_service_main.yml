@@ -620,24 +620,24 @@ continue button field: certificate_preview_question
 ---
 code: |
   signature_fields = ['users[0].signature']
----
-id: Signing your forms
-question: |
-  Date of your signature
-fields:
-  - "This is how your name will appear under your signature.": printed_signature
-    default: |
-      ${ users[0].name }
-    maxlength: 34
-  - "Date of your signature for these forms": signature_date
-    datatype: date
-    required: False
-    default: |
-      ${ today() }
-  -  note: |
-       You can change this date later if you want.
-
-       **Tap Next to choose how to sign your documents.**
+#---
+#id: Signing your forms
+#question: |
+#  Date of your signature
+#fields:
+#  - "This is how your name will appear under your signature.": printed_signature
+#    default: |
+#      ${ users[0].name }
+#    maxlength: 34
+#  - "Date of your signature for these forms": signature_date
+#    datatype: date
+#    required: False
+#    default: |
+#      ${ today() }
+#  -  note: |
+#       You can change this date later if you want.
+#
+#       **Tap Next to choose how to sign your documents.**
 ---
 id: signature choice
 decoration: file-signature
@@ -705,7 +705,7 @@ objects:
       filename="certificate_of_service", title="Form to file with the court", enabled=True)
 ---
 objects:
-  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service.pdf", enabled=True, has_addendum=True)
+  - certificate_of_service_attachment: ALDocument.using(title="Certificate of Service", filename="Certificate of Service - Form 600-00264.pdf", enabled=True, has_addendum=True)
   - certificate_of_service_post_interview_instructions: ALDocument.using(title="NEXT STEPS - Instructions for filing this form with the court", filename="general_certificate_of_service_next_steps.docx", enabled=True, has_addendum=False)
 ---
 attachment:
@@ -767,7 +767,7 @@ attachment:
     - service_email3: ${ showifdef('service_recipients[2].service_email') if len(service_recipients) > 2 and service_recipients[2].by_email else '' }
     - cos_signature_date: ${ signature_date }
     - COS_signature: ${ users[0].signature }
-    - cos_signer_name: ${ printed_signature }
+    - cos_printed_signature: ${ printed_signature }
 ---
 attachment:
   name: Post-interview-Instructions
